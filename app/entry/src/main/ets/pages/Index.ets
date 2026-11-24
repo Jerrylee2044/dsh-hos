@@ -254,12 +254,13 @@ struct Index {
       '    return false;' +
       '  };' +
       '  if (pick("打开侧边栏") && pick("打开右侧边栏")) {' +
+      // 实测触摸横滑的方向与手指物理方向相反：这里按实测映射。
       '    if (direction === "right") {' +
-      '      if (!clickAt(40, 50)) return "home-no-left-button";' +
-      '      return "left-sidebar";' +
+      '      if (!clickAt(window.innerWidth - 40, 50)) return "home-no-right-button";' +
+      '      return "right-sidebar";' +
       '    }' +
-      '    if (!clickAt(window.innerWidth - 40, 50)) return "home-no-right-button";' +
-      '    return "right-sidebar";' +
+      '    if (!clickAt(40, 50)) return "home-no-left-button";' +
+      '    return "left-sidebar";' +
       '  }' +
       '  return "none";' +
       '} catch (e) { return "error"; }' +
