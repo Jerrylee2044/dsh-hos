@@ -49,16 +49,22 @@
 ### 已验证
 
 - 终端 `pwd`、Python 版本、Python REPL 可用；
-- Agent bash 已接入 host `libbash`，但端到端仍需复测；
 - `qemu` host 命令可用，`qemu -version` 返回 `qemu-x86_64 version 10.1.5`；
 - Alpine rootfs 已打入 HAP 并解出；
 - `qemu -L qemu-root qemu-root/bin/sh -c 'echo ALPINE_SH_OK'` 返回成功；
-- `qemu-root/sbin/apk --version` 返回 apk-tools 2.14.4。
+- 自研 `apk` 安装器已验证：`apk add curl` 自动安装 curl/libcurl 及其 12 个依赖；
+- 安装后 `curl 8.14.1` 可执行，动态库符号链接正常；
+- ArkWeb 调试端口 `127.0.0.1:9222` 已启用；
+- `browser open https://example.com` 成功，返回标题 `Example Domain`；
+- `browser text`、`browser dom`、`browser screenshot`、`browser click`、`browser type`、`browser eval`、`browser userscript` 均已验证；
+- `browser close` 可关闭覆盖层；
+- 截图输出到工作区 `dsh-browser.png`。
 
 ### 阻塞
 
-- 旧 `libprobe` QEMU host 仍不适合作为执行入口，已改为自研 host 的 `qemu` 命令；
-- `apk add curl` 仍失败：无可用软件仓库缓存，且 guest 包安装流程未完成；
+- 旧 `libprobe` QEMU host 不适合作为执行入口，已改为自研 host 的 `qemu` 命令；
+- ArkWeb 浏览器通过 iframe 承载，目标站点若设置 `X-Frame-Options`/CSP `frame-ancestors`，可能拒绝加载；
+- 不支持 Chrome 扩展。
 - HarmonyOS 沙箱不提供真实 Linux 内核，无法实现任意 `apt`/systemd/docker；
 - ArkWeb 是 Chromium 内核，但没有 Chrome 扩展运行时，无法安装 Chrome Web Store 插件。
 

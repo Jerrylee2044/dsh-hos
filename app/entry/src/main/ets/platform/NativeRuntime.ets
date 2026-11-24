@@ -238,6 +238,7 @@ export class NativeRuntime {
     text += 'npm() { __dsh_tool node "$IEC_SYSROOT/npm/bin/npm-cli.js" "$@"; }\n';
     text += 'npx() { __dsh_tool node "$IEC_SYSROOT/npm/bin/npx-cli.js" "$@"; }\n';
     text += 'qemu-bash() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$IEC_SYSROOT/qemu-tools/bash" "$@"; }\n';
+    text += 'browser() { __dsh_tool node "$IEC_SYSROOT/tools/browser.mjs" "$@"; }\n';
     text += 'qemu-git() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$IEC_SYSROOT/qemu-tools/git" "$@"; }\n';
     text += 'qemu-run() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$@"; }\n';
     text += 'apk-real() { qemu-run "$IEC_SYSROOT/qemu-root/sbin/apk" "$@"; }\n';
@@ -412,6 +413,7 @@ export class NativeRuntime {
       this.copyRawfile('tools/sidebar-terminal-no-guide.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-sidebar-terminal/lib/client.js');
       this.ensureDir(this.root + '/tools');
       this.copyRawfile('tools/apk-install.mjs', this.root + '/tools/apk-install.mjs');
+      this.copyRawfile('tools/browser.mjs', this.root + '/tools/browser.mjs');
     } catch (error) {
       hilog.warn(0, 'DSH-RT', 'runtime shims unavailable');
     }
