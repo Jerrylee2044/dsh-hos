@@ -221,7 +221,7 @@ struct Index {
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
       '(function(){var sx=0,sy=0,st=0,active=false;' +
       'document.addEventListener("touchstart",function(e){if(e.touches.length!==1){active=false;return;}var t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;},true);' +
-      'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}try{console.log("DSH_SWIPE:"+(dx>0?"left":"right"));}catch(x){}},true);})();'
+      'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}if(document.body.innerText.indexOf("打开配置文件")>=0&&sy<window.innerHeight*0.2){return;}try{console.log("DSH_SWIPE:"+(dx>0?"left":"right"));}catch(x){}},true);})();'
   }
 
   private onWebSwipe(direction: string): void {
