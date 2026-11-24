@@ -3,7 +3,7 @@ import { fileIo as fs } from '@kit.CoreFileKit';
 import fileIO from '@ohos.fileio';
 import { util } from '@kit.ArkTS';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { probe as probeHost, spawn as spawnHost, poll as pollHost, write as writeHost, terminate as terminateHost, release as releaseHost, unpack as unpackHost, HostChunk } from 'host';
+import { probe as probeHost, spawn as spawnHost, poll as pollHost, write as writeHost, terminate as terminateHost, release as releaseHost, unpack as unpackHost, symlink as symlinkHost, HostChunk } from 'host';
 
 
 interface RuntimeCommand {
@@ -165,10 +165,18 @@ export class NativeRuntime {
 
   private writeLaunchers(): void {
     // 自研 host 直接 dlopen .so，不再需要 IECSO 启动器；只保留 argv0 路径。
-    for (const name of ['node', 'bash']) {
-      const path = this.root + '/bin/' + name;
-      if (!fs.accessSync(path)) { this.writeText(path, ''); }
+    const bash = this.root + '/bin/bash';
+    try { fs.unlinkSync(bash); } catch (error) { /* 不存在 */ }
+    let linked = false;
+    try { linked = symlinkHost('/system/bin/sh', bash); } catch (error) { linked = false; }
+    if (!linked) {
+      try {
+        fs.copyFileSync('/system/bin/sh', bash);
+        fileIO.chmodSync(bash, 0o755);
+      } catch (error) { /* 保留空 */ }
     }
+    const node = this.root + '/bin/node';
+    if (!fs.accessSync(node)) { this.writeText(node, ''); }
   }
 
   private installToolLaunchers(): void {
@@ -303,7 +311,7 @@ export class NativeRuntime {
       'DSH_TOOL_PORT': '47654',
       'HOME': home,
       'TMPDIR': temp,
-      'SHELL': this.root + '/bin/bash',
+      'SHELL': '/system/bin/sh',
       'TERM': 'dumb',
       'LANG': 'C.UTF-8',
       'LC_ALL': 'C.UTF-8',
@@ -358,6 +366,7 @@ export class NativeRuntime {
       this.copyRawfile('tools/require-builtin-shim.js', this.root + '/engine/node_modules/node-addon-require-builtin/lib/index.js');
       this.copyRawfile('tools/flock-shim.js', this.root + '/engine/node_modules/@deepseek-ai/node-addon-system/lib/flock.js');
       this.copyRawfile('tools/settings-general-about.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-settings-general/lib/client.js');
+      this.copyRawfile('tools/subprocess-local-patched.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-subprocess-local/lib/index.js');
     } catch (error) {
       hilog.warn(0, 'DSH-RT', 'runtime shims unavailable');
     }
