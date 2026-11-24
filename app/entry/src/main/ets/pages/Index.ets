@@ -223,22 +223,20 @@ struct Index {
 
   private onWebSwipe(direction: string): void {
     hilog.info(0, 'DSH-WEB', 'onWebSwipe direction=%{public}s', direction);
-    const dir = JSON.stringify(direction);
-    const closePicker = 'const nodes=Array.from(document.querySelectorAll("button,[role=button]")).filter(n=>n.getClientRects().length>0);' +
+    const picker = 'const nodes=Array.from(document.querySelectorAll("button,[role=button]")).filter(n=>n.getClientRects().length>0);' +
       'const label=n=>((n.getAttribute("aria-label")||"")+" "+(n.textContent||"")).trim();' +
       'const pick=k=>nodes.find(n=>label(n).includes(k));';
-    const script = direction === 'right'
-      ? '(()=>{' + closePicker + 'const b=pick("打开侧边栏");if(b){b.click();return "left-sidebar";}return "none";})()'
-      : '(()=>{' + closePicker +
-        'const bodyText=document.body.innerText||"";' +
-        'const home=bodyText.includes("描述你想要构建的内容")&&!bodyText.includes("发消息或创建任务");' +
-        'if(home){const b=pick("打开右侧边栏");if(b){b.click();return "right-sidebar";}return "none";}' +
-        'for(const k of ["关闭右侧边栏","收起右侧边栏","关闭","Close","退出全屏","收起","返回"]){const b=pick(k);if(b){b.click();return "close:"+k;}}' +
-        'const all=Array.from(document.querySelectorAll("button,[role=button]"));' +
-        'const ns=all.find(n=>label(n).includes("新会话"));if(ns){ns.click();return "new-session";}' +
-        'const openLeft=all.find(n=>label(n).includes("打开侧边栏"));if(openLeft){openLeft.click();return "open-left";}' +
-        'try{window.history.back();return "history";}catch(e){return "none";}' +
-        '})()';
+    const home = 'const bodyText=document.body.innerText||"";' +
+      'const home=bodyText.includes("描述你想要构建的内容")&&!bodyText.includes("发消息或创建任务");';
+    const root = 'for(const k of ["关闭右侧边栏","收起右侧边栏","关闭","Close","退出全屏","收起","返回"]){const b=pick(k);if(b){b.click();return "close:"+k;}}' +
+      'const all=Array.from(document.querySelectorAll("button,[role=button]"));' +
+      'const ns=all.find(n=>label(n).includes("新会话"));if(ns){ns.click();return "new-session";}' +
+      'try{window.history.back();return "history";}catch(e){return "none";}';
+    const homeButton = direction === 'right' ? '打开侧边栏' : '打开右侧边栏';
+    const homeResult = direction === 'right' ? 'left-sidebar' : 'right-sidebar';
+    const script = '(()=>{' + picker + home +
+      'if(home){const b=pick("' + homeButton + '");if(b){b.click();return "' + homeResult + '";}return "none";}' +
+      root + '})()';
     this.controller.runJavaScript(script).then((result: string) => {
       hilog.info(0, 'DSH-WEB', 'swipe %{public}s -> %{public}s', direction, result);
     }).catch(() => {
@@ -268,7 +266,7 @@ struct Index {
       'try {' +
       '  const nodes = Array.from(document.querySelectorAll("button,[role=button]")).filter(n => n.getClientRects().length > 0);' +
       '  const textOf = n => ((n.getAttribute("aria-label") || "") + " " + (n.textContent || "")).trim();' +
-      '  const home = Array.from(document.querySelectorAll("*")).some(n => n.getClientRects().length > 0 && n.children.length === 0 && (n.textContent || "").trim() === "探索未至之境");' +
+      '  const home = (document.body.innerText || "").includes("探索未至之境");' +
       '  if (home) {' +
       '    const openLeft = nodes.find(n => textOf(n).includes("打开侧边栏"));' +
       '    if (openLeft) { openLeft.click(); return "left-sidebar"; }' +
