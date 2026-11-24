@@ -221,54 +221,52 @@ struct Index {
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
       '(function(){var sx=0,sy=0,st=0,active=false;' +
       'document.addEventListener("touchstart",function(e){if(e.touches.length!==1){active=false;return;}var t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;},true);' +
-      'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}try{console.log("DSH_SWIPE:"+(dx>0?"right":"left"));}catch(x){}},true);})();'
+      'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}try{console.log("DSH_SWIPE:"+(dx>0?"left":"right"));}catch(x){}},true);})();'
   }
 
   private onWebSwipe(direction: string): void {
-    hilog.info(0, 'DSH-WEB', 'onWebSwipe direction=%{public}s', direction);
     const script = '(() => {' +
+      'const dir=' + JSON.stringify(direction) + ';' +
       'try {' +
-      '  const nodes = Array.from(document.querySelectorAll("button,[role=button]")).filter(n => n.getClientRects().length > 0);' +
+      '  const inView = n => {' +
+      '    const r = n.getBoundingClientRect();' +
+      '    return r.width > 0 && r.height > 0 && r.left >= -1 && r.top >= -1 &&' +
+      '      r.right <= window.innerWidth + 1 && r.bottom <= window.innerHeight + 1;' +
+      '  };' +
+      '  const nodes = Array.from(document.querySelectorAll("button,[role=button]")).filter(inView);' +
       '  const label = n => ((n.getAttribute("aria-label") || "") + " " + (n.textContent || "")).trim();' +
       '  const pick = k => nodes.find(n => label(n).includes(k));' +
       '  const body = document.body.innerText || "";' +
+      '  const click = k => { const n = pick(k); if (n) { n.click(); return true; } return false; };' +
       // 设置页
       '  if (pick("打开配置文件")) {' +
-      '    const b = pick("关闭");' +
-      '    if (b) { b.click(); return "close-settings"; }' +
-      '    const esc = new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true });' +
-      '    document.dispatchEvent(esc); window.dispatchEvent(esc); return "settings-escape";' +
+      '    if (click("关闭")) return "close-settings";' +
+      '    return "settings-no-close";' +
       '  }' +
       // 图2 左侧栏
-      '  const collapseLeft = pick("收起侧边栏");' +
-      '  if (collapseLeft) { collapseLeft.click(); return "close-left"; }' +
+      '  if (pick("收起侧边栏")) {' +
+      '    if (click("收起侧边栏")) return "close-left";' +
+      '    return "left-no-close";' +
+      '  }' +
       // 图3 右侧栏
-      '  const collapseRight = pick("收起右侧边栏") || pick("退出全屏");' +
-      '  if (collapseRight) { collapseRight.click(); return "close-right"; }' +
-      // 普通会话
-      '  if (body.includes("发消息或创建任务")) { return "session"; }' +
-      // 图1 首页：按屏幕坐标点击左上/右上按钮，避免 aria-label 重复导致点错。
-      '  const clickAt = (x, y) => {' +
-      '    const el = document.elementFromPoint(x, y);' +
-      '    if (el) { (el.closest("button,[role=button]") || el).click(); return true; }' +
-      '    return false;' +
-      '  };' +
-      '  if (pick("打开侧边栏") && pick("打开右侧边栏")) {' +
-      // 实测触摸横滑的方向与手指物理方向相反：这里按实测映射。
-      '    if (direction === "right") {' +
-      '      if (!clickAt(window.innerWidth - 40, 50)) return "home-no-right-button";' +
-      '      return "right-sidebar";' +
-      '    }' +
-      '    if (!clickAt(40, 50)) return "home-no-left-button";' +
-      '    return "left-sidebar";' +
+      '  if (pick("收起右侧边栏") || pick("退出全屏")) {' +
+      '    if (click("收起右侧边栏")) return "close-right";' +
+      '    if (click("退出全屏")) return "close-right-fullscreen";' +
+      '    return "right-no-close";' +
+      '  }' +
+      // 图1 首页
+      '  const openLeft = pick("打开侧边栏");' +
+      '  const openRight = pick("打开右侧边栏");' +
+      '  if (openLeft && openRight) {' +
+      '    if (dir === "right") { openLeft.click(); return "left-sidebar"; }' +
+      '    openRight.click(); return "right-sidebar";' +
       '  }' +
       '  return "none";' +
-      '} catch (e) { return "error"; }' +
+      '} catch (e) { return "error:" + String(e); }' +
       '})()';
     this.controller.runJavaScript(script).then((result: string) => {
       hilog.info(0, 'DSH-WEB', 'swipe %{public}s -> %{public}s', direction, result);
     }).catch(() => {
-      hilog.warn(0, 'DSH-WEB', 'swipe script failed');
     });
   }
 
