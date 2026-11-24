@@ -55,7 +55,7 @@ bash-5.3$ git status --short
 fatal: not a git repository ...   # 已正确继承当前 PWD
 ```
 
-说明：`git` 已可用并继承终端当前工作目录；`python3 --version` 返回 `Python 3.12.14`。交互式 stdin 尚未接入。
+说明：`git` 已可用并继承终端当前工作目录；`python3 --version` 返回 `Python 3.12.14`。`python3` REPL 已能启动并显示 Python 提示符，输入转发仍在完善。
 
 ### P1b 上游 PTY 终端
 

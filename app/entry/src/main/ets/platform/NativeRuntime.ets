@@ -197,10 +197,29 @@ export class NativeRuntime {
       '  exec 3>&-\n' +
       '  return ${status:-1}\n' +
       '}\n';
+    text += '__dsh_interactive() {\n' +
+      '  local cmd="$1"; shift\n' +
+      '  local port="${DSH_TOOL_PORT:-47654}"\n' +
+      '  if ! exec 3<>/dev/tcp/127.0.0.1/$port 2>/dev/null; then\n' +
+      '    echo "dsh-tool: server unavailable" >&2; return 127;\n' +
+      '  fi\n' +
+      '  { printf "%s\\nINTERACTIVE\\n%s\\n" "$PWD" "$cmd"; printf "DSH_ENV=PYTHONHOME=%s\\n" "$IEC_SYSROOT/python"; printf "DSH_ENV=PYTHONPATH=%s\\n" "$IEC_SYSROOT/python/lib/python3.12"; for arg in "$@"; do printf "%s\\n" "$arg"; done; printf "\\n"; } >&3\n' +
+      '  cat <&3 &\n' +
+      '  local catpid=$!\n' +
+      '  while kill -0 "$catpid" 2>/dev/null; do\n' +
+      '    if IFS= read -r -t 0.1 line; then printf "%s\\n" "$line" >&3; fi\n' +
+      '  done\n' +
+      '  wait "$catpid" 2>/dev/null\n' +
+      '  exec 3>&-\n' +
+      '}\n';
     const tools = ['git', 'python', 'python3', 'pip', 'rg', 'tar', 'unzip', 'zip', 'curl', 'jq',
       'ssh', 'scp', 'openssl', 'tree', 'sqlite3', 'rsync', 'xz', 'zstd'];
     for (const name of tools) {
-      text += name + '() { __dsh_tool ' + name + ' "$@"; }\n';
+      if (name === 'python' || name === 'python3') {
+        text += name + '() { if [ "$#" -eq 0 ]; then __dsh_interactive ' + name + ' -i -u; else __dsh_tool ' + name + ' "$@"; fi; }\n';
+      } else {
+        text += name + '() { __dsh_tool ' + name + ' "$@"; }\n';
+      }
     }
     text += 'command_not_found_handle() {\n' +
       '  case "$1" in\n' +

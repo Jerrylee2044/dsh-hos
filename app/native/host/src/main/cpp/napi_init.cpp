@@ -396,6 +396,102 @@ static const char* ToolLibFor(const std::string& name, std::string& entry, std::
   return nullptr;
 }
 
+
+static void WriteAll(int fd, const char* data, size_t size) {
+  while (size > 0) {
+    ssize_t n = write(fd, data, size);
+    if (n <= 0) { return; }
+    data += n; size -= static_cast<size_t>(n);
+  }
+}
+
+static void ServeInteractiveClient(int client, const std::string& cwd, const std::string& command,
+                                   const std::vector<std::string>& args) {
+  std::string lib;
+  std::string entry;
+  if (ToolLibFor(command, entry, lib) == nullptr) {
+    std::string msg = "dsh-tool: unsupported interactive command '" + command + "'\n";
+    WriteAll(client, msg.data(), msg.size());
+    close(client);
+    return;
+  }
+  int inPipe[2]; int outPipe[2]; int errPipe[2];
+  if (pipe(inPipe) != 0 || pipe(outPipe) != 0 || pipe(errPipe) != 0) { close(client); return; }
+  pid_t pid = fork();
+  if (pid == 0) {
+    dup2(inPipe[0], STDIN_FILENO);
+    dup2(outPipe[1], STDOUT_FILENO);
+    dup2(errPipe[1], STDERR_FILENO);
+    close(inPipe[0]); close(inPipe[1]);
+    close(outPipe[0]); close(outPipe[1]);
+    close(errPipe[0]); close(errPipe[1]);
+    if (!cwd.empty()) { (void)chdir(cwd.c_str()); }
+    std::string path = "/data/storage/el1/bundle/libs/arm64/" + lib;
+    void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (handle == nullptr) {
+      const char* err = dlerror();
+      WriteAll(STDERR_FILENO, err ? err : "dlopen failed", strlen(err ? err : "dlopen failed"));
+      _exit(127);
+    }
+    int (*fn)(int, char**) = reinterpret_cast<int (*)(int, char**)>(dlsym(handle, entry.c_str()));
+    if (fn == nullptr) { _exit(127); }
+    std::vector<char*> argv;
+    argv.push_back(const_cast<char*>(command.c_str()));
+    for (const auto& arg : args) { argv.push_back(const_cast<char*>(arg.c_str())); }
+    argv.push_back(nullptr);
+    _exit(fn(static_cast<int>(argv.size() - 1), argv.data()));
+  }
+  close(inPipe[0]); close(outPipe[1]); close(errPipe[1]);
+  int outFd = outPipe[0];
+  int errFd = errPipe[0];
+  bool inputOpen = true;
+  bool childDone = false;
+  while (!childDone) {
+    int outClosed = outFd < 0;
+    int errClosed = errFd < 0;
+    if (outClosed && errClosed && inputOpen == false) { break; }
+    struct pollfd fds[3];
+    fds[0].fd = client; fds[0].events = POLLIN; fds[0].revents = 0;
+    fds[1].fd = outFd; fds[1].events = POLLIN; fds[1].revents = 0;
+    fds[2].fd = errFd; fds[2].events = POLLIN; fds[2].revents = 0;
+    int ready = poll(fds, 3, 100);
+    if (ready < 0) { break; }
+    if (fds[1].fd >= 0 && (fds[1].revents & (POLLIN | POLLHUP | POLLERR)) != 0) {
+      char buf[4096];
+      ssize_t n = read(outFd, buf, sizeof(buf));
+      if (n > 0) { WriteAll(client, buf, static_cast<size_t>(n)); }
+      else { close(outFd); outFd = -1; }
+    }
+    if (fds[2].fd >= 0 && (fds[2].revents & (POLLIN | POLLHUP | POLLERR)) != 0) {
+      char buf[4096];
+      ssize_t n = read(errFd, buf, sizeof(buf));
+      if (n > 0) { WriteAll(client, buf, static_cast<size_t>(n)); }
+      else { close(errFd); errFd = -1; }
+    }
+    if (fds[0].fd >= 0 && (fds[0].revents & (POLLIN | POLLHUP | POLLERR)) != 0) {
+      char buf[4096];
+      ssize_t n = read(client, buf, sizeof(buf));
+      if (n > 0) {
+        if (inputOpen) { WriteAll(inPipe[1], buf, static_cast<size_t>(n)); }
+      } else {
+        inputOpen = false;
+        close(inPipe[1]);
+        fds[0].fd = -1;
+        shutdown(client, SHUT_RD);
+      }
+    }
+    int status = 0;
+    pid_t waited = waitpid(pid, &status, WNOHANG);
+    if (waited == pid) { childDone = true; }
+  }
+  if (outFd >= 0) { close(outFd); }
+  if (errFd >= 0) { close(errFd); }
+  if (inputOpen) { close(inPipe[1]); }
+  int status = 0;
+  waitpid(pid, &status, 0);
+  close(client);
+}
+
 static void ServeToolClient(int client) {
   std::string request;
   char buffer[4096];
@@ -418,6 +514,22 @@ static void ServeToolClient(int client) {
   if (lines.size() < 2 || lines[1].empty()) { close(client); return; }
   std::string cwd = lines[0];
   std::string command = lines[1];
+  if (command == "INTERACTIVE") {
+    if (lines.size() < 3 || lines[2].empty()) { close(client); return; }
+    std::vector<std::string> interactiveArgs;
+    for (size_t i = 3; i < lines.size(); ++i) {
+      const std::string& line = lines[i];
+      if (line.rfind("DSH_ENV=", 0) == 0) {
+        std::string kv = line.substr(8);
+        size_t eq = kv.find('=');
+        if (eq != std::string::npos) { setenv(kv.substr(0, eq).c_str(), kv.substr(eq + 1).c_str(), 1); }
+      } else {
+        interactiveArgs.push_back(line);
+      }
+    }
+    ServeInteractiveClient(client, cwd, lines[2], interactiveArgs);
+    return;
+  }
   std::string lib;
   std::string entry;
   if (ToolLibFor(command, entry, lib) == nullptr) {
