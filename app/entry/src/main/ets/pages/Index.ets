@@ -267,6 +267,11 @@ struct Index {
       'try {' +
       '  const nodes = Array.from(document.querySelectorAll("button,[role=button]")).filter(n => n.getClientRects().length > 0);' +
       '  const textOf = n => ((n.getAttribute("aria-label") || "") + " " + (n.textContent || "")).trim();' +
+      '  const home = Array.from(document.querySelectorAll("*")).some(n => n.getClientRects().length > 0 && n.children.length === 0 && (n.textContent || "").trim() === "探索未至之境");' +
+      '  if (home) {' +
+      '    const openLeft = nodes.find(n => textOf(n).includes("打开侧边栏"));' +
+      '    if (openLeft) { openLeft.click(); return "left-sidebar"; }' +
+      '  }' +
       '  const priorities = ["关闭右侧边栏", "收起右侧边栏", "关闭", "Close", "退出全屏", "收起", "返回", "Back"];' +
       '  for (const key of priorities) {' +
       '    const hit = nodes.find(n => textOf(n).includes(key));' +
