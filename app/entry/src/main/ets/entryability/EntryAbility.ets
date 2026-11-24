@@ -64,7 +64,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onWindowStageCreate(stage: window.WindowStage): void {
-    try { webview.WebviewController.setWebDebuggingAccess(BuildProfile.DEBUG); } catch (error) { /* 调试开关 */ }
+    try { webview.WebviewController.setWebDebuggingAccess(true, 9222); } catch (error) { /* 调试开关 */ }
     try {
       const context = this.context as common.UIAbilityContext;
       context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
