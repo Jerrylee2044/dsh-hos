@@ -264,7 +264,7 @@ export class NativeRuntime {
     const temp = this.context.filesDir + '/tmp';
     const ca = this.root + '/certs/cacert.pem';
     return {
-      'PATH': this.root + '/bin',
+      'PATH': this.root + '/bin:/system/bin:/system/xbin',
       'HOME': home,
       'TMPDIR': temp,
       'SHELL': this.root + '/bin/bash',

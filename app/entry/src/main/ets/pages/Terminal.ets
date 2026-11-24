@@ -102,6 +102,10 @@ export struct TerminalView {
   private win?: window.Window;
   private previousKeyboardMode: UIKeyboardAvoidMode = UIKeyboardAvoidMode.OFFSET;
   private decoder = util.TextDecoder.create('utf-8');
+  private focusInput(): void {
+    try { this.getUIContext().getFocusController().requestFocus('term-input'); } catch (error) { /* 未挂载 */ }
+  }
+
   private keyboardChanged = (height: number): void => {
     this.keyboardHeight = this.getUIContext().px2vp(height);
   };
@@ -148,6 +152,7 @@ export struct TerminalView {
         (text: string) => this.feed(text),
         (code: number) => { this.statusText = 'shell exited (' + code.toString() + ')'; });
       this.ready = true;
+    setTimeout(() => this.focusInput(), 300);
       this.statusText = '';
     } catch (error) {
       this.statusText = '终端启动失败：' + (error as Error).message;
@@ -226,6 +231,7 @@ export struct TerminalView {
       .layoutWeight(1)
       .backgroundColor(BG)
       .scrollable(ScrollDirection.Vertical)
+      .onClick(() => this.focusInput())
       Scroll() {
         Row({ space: 6 }) {
           this.termKey('Esc', '\u001b')
@@ -236,6 +242,8 @@ export struct TerminalView {
           this.termKey('↑', '\u001b[A')
           this.termKey('↓', '\u001b[B')
           this.termKey('→', '\u001b[C')
+          Button('键盘').fontSize(12).height(30).backgroundColor('#2A2C30').fontColor(FG).borderRadius(8)
+            .onClick(() => this.focusInput())
         }.padding({ left: 8, right: 8, top: 6, bottom: 6 })
       }
       .scrollable(ScrollDirection.Horizontal)
