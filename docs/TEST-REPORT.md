@@ -28,7 +28,7 @@
 | 设置 | 通过 | 账号/通用/模型/插件/关于等标签可切换 |
 | 关于 | 通过 | 独立标签页，透明 logo，版本/链接正常 |
 | 终端启动 | 通过 | 原生终端进入 bash-5.3；“新建终端”入口已统一为原生终端 |
-| 终端命令 | 大部分通过 | `pwd`、`ls`、`git --version`、`rg --version` 正常；`python3` 仍待修复 |
+| 终端命令 | 通过 | `pwd`、`ls`、`git --version`、`rg --version`、`python3 --version` 正常 |
 | 前后台 | 通过 | 切后台后重新打开保持状态 |
 | 终端输入法 | 通过 | v365 打开终端自动聚焦，键盘自动弹出 |
 | 崩溃 | 通过 | 当前日志未见 SIGSEGV/SIGSYS；仅有 SIGCHLD 链 |
@@ -55,7 +55,7 @@ bash-5.3$ git status --short
 fatal: not a git repository ...   # 已正确继承当前 PWD
 ```
 
-说明：`git` 已可用并继承终端当前工作目录；`python3 -c` 仍存在挂起问题，交互式 stdin 尚未接入。
+说明：`git` 已可用并继承终端当前工作目录；`python3 --version` 返回 `Python 3.12.14`。交互式 stdin 尚未接入。
 
 ### P1b 上游 PTY 终端
 
