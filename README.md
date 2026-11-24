@@ -213,7 +213,16 @@ entry/src/main/resources/rawfile/tools/
   runtime-manifest.json
 ```
 
-这些文件较大（引擎约 100 MB、Node 库约 130 MB），不纳入 Git；请使用 Release 的 `runtime-assets` 包或自行构建后放入。
+这些文件较大（引擎约 100 MB、Node 库约 130 MB），不纳入 Git。可以直接从本项目的 unsigned HAP 中取出：
+
+```bash
+unzip -q DSH-HOS-0.2.3-alpha.2-hos.388-unsigned.hap \
+  'libs/arm64-v8a/*' 'resources/rawfile/*' -d /tmp/dsh-runtime
+cp -r /tmp/dsh-runtime/libs/arm64-v8a/* build/entry/libs/arm64-v8a/
+cp -r /tmp/dsh-runtime/resources/rawfile/* build/entry/src/main/resources/rawfile/
+```
+
+然后按上面的构建命令编译。
 
 ### 首次使用
 
