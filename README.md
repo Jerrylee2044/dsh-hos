@@ -37,7 +37,7 @@ Bash         GNU Bash 5.3（OHOS 自研入口 dsh_bash_main）
 | 会话保存 / 强杀重启恢复 | 已真机验证 |
 | 工作区选择、工作区文件 | 已真机验证 |
 | 右侧栏原生终端（bash） | 已真机验证 |
-| 终端外部工具：git / rg / python3 | 已真机验证 |
+| 终端开发/运维工具：git / gh / rg / python3 / node / npm / curl / ssh 等 34 个命令入口 | 已打包并安装验证 |
 | Python REPL 交互输入 | 已真机验证 |
 | 设置 + 独立“关于”页 | 已真机验证 |
 | 关于页链接调用系统浏览器 | 已真机验证 |
@@ -247,6 +247,7 @@ cp -r /tmp/dsh-runtime/resources/rawfile/* build/entry/src/main/resources/rawfil
 
 - [详细测试方案](docs/TEST-PLAN.md)
 - [真机测试报告](docs/TEST-REPORT.md)
+- [终端工具清单](docs/TERMINAL-TOOLS.md)
 - [返回手势实现](docs/BACK-NAVIGATION.md)
 - [构建说明](docs/BUILD.md)
 - [签名与安装](docs/SIGN-INSTALL.md)

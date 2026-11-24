@@ -216,8 +216,9 @@ export class NativeRuntime {
       '  kill "$catpid" 2>/dev/null\n' +
       '  exec 3>&-\n' +
       '}\n';
-    const tools = ['git', 'python', 'python3', 'pip', 'rg', 'tar', 'unzip', 'zip', 'curl', 'jq',
-      'ssh', 'scp', 'openssl', 'tree', 'sqlite3', 'rsync', 'xz', 'zstd'];
+    const tools = ['git', 'gh', 'python', 'python3', 'pip', 'node', 'rg', 'tar', 'cpio', 'unzip', 'zip',
+      'diff', 'curl', 'jq', 'bc', 'less', 'nc', 'ssh', 'scp', 'sftp', 'openssl', 'tree', 'sqlite3',
+      'rsync', 'xz', 'zstd', 'hexdump', 'vim', 'toybox'];
     for (const name of tools) {
       if (name === 'python' || name === 'python3') {
         text += name + '() { if [ "$#" -eq 0 ]; then __dsh_interactive ' + name + ' -i -u; else __dsh_tool ' + name + ' "$@"; fi; }\n';
@@ -225,6 +226,8 @@ export class NativeRuntime {
         text += name + '() { __dsh_tool ' + name + ' "$@"; }\n';
       }
     }
+    text += 'npm() { __dsh_tool node "$IEC_SYSROOT/npm/bin/npm-cli.js" "$@"; }\n';
+    text += 'npx() { __dsh_tool node "$IEC_SYSROOT/npm/bin/npx-cli.js" "$@"; }\n';
     text += 'command_not_found_handle() {\n' +
       '  case "$1" in\n' +
       '    git-remote-http|git-remote-https|git-lfs) __dsh_tool "$1" "${@:2}";;\n' +

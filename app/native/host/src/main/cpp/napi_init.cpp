@@ -367,6 +367,17 @@ static napi_value Unpack(napi_env env, napi_callback_info info) {
 struct ToolMap { const char *name; const char *library; const char *entry; };
 static const ToolMap kHostTools[] = {
   {"git", "libgit.so", "iec_git_main"},
+  {"gh", "libghcmd.so", "iec_gh_main"},
+  {"bc", "libbccmd.so", "iec_bc_main"},
+  {"cpio", "libbsdcpio.so", "iec_bsdcpio_main"},
+  {"diff", "libdiff.so", "iec_diff_main"},
+  {"hexdump", "libhexdump.so", "iec_hexdump_main"},
+  {"less", "liblesscmd.so", "iec_less_main"},
+  {"nc", "libnc.so", "iec_nc_main"},
+  {"sftp", "libsftpcmd.so", "iec_sftp_main"},
+  {"vim", "libvimcmd.so", "iec_vim_main"},
+  {"node", "libnode.so", "dsh_node_main"},
+  {"toybox", "libtoybox.so", "toybox_main"},
   {"git-remote-http", "libgit-remote-http.so", "iec_git_remote_http_main"},
   {"git-remote-https", "libgit-remote-http.so", "iec_git_remote_http_main"},
   {"git-lfs", "libgitlfscmd.so", "iec_gitlfs_main"},
