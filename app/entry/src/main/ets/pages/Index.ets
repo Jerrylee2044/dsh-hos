@@ -247,12 +247,19 @@ struct Index {
       '  if (collapseRight) { collapseRight.click(); return "close-right"; }' +
       // 普通会话
       '  if (body.includes("发消息或创建任务")) { return "session"; }' +
-      // 图1 首页：左滑开图3，右滑开图2
-      '  const openLeft = pick("打开侧边栏");' +
-      '  const openRight = pick("打开右侧边栏");' +
-      '  if (openLeft && openRight) {' +
-      '    const target = direction === "right" ? openLeft : openRight;' +
-      '    target.click(); return direction === "right" ? "left-sidebar" : "right-sidebar";' +
+      // 图1 首页：按屏幕坐标点击左上/右上按钮，避免 aria-label 重复导致点错。
+      '  const clickAt = (x, y) => {' +
+      '    const el = document.elementFromPoint(x, y);' +
+      '    if (el) { (el.closest("button,[role=button]") || el).click(); return true; }' +
+      '    return false;' +
+      '  };' +
+      '  if (pick("打开侧边栏") && pick("打开右侧边栏")) {' +
+      '    if (direction === "right") {' +
+      '      if (!clickAt(40, 50)) return "home-no-left-button";' +
+      '      return "left-sidebar";' +
+      '    }' +
+      '    if (!clickAt(window.innerWidth - 40, 50)) return "home-no-right-button";' +
+      '    return "right-sidebar";' +
       '  }' +
       '  return "none";' +
       '} catch (e) { return "error"; }' +
