@@ -49,11 +49,16 @@
 ### 已验证
 
 - 终端 `pwd`、Python 版本、Python REPL 可用；
-- Agent bash 已接入 host `libbash`，但端到端仍需复测。
+- Agent bash 已接入 host `libbash`，但端到端仍需复测；
+- `qemu` host 命令可用，`qemu -version` 返回 `qemu-x86_64 version 10.1.5`；
+- Alpine rootfs 已打入 HAP 并解出；
+- `qemu -L qemu-root qemu-root/bin/sh -c 'echo ALPINE_SH_OK'` 返回成功；
+- `qemu-root/sbin/apk --version` 返回 apk-tools 2.14.4。
 
 ### 阻塞
 
-- QEMU host 监听 `127.0.0.1:41301`，但 `/exec`、`/session/*` 请求无响应，guest 启动链未跑通；
+- 旧 `libprobe` QEMU host 仍不适合作为执行入口，已改为自研 host 的 `qemu` 命令；
+- `apk add curl` 仍失败：无可用软件仓库缓存，且 guest 包安装流程未完成；
 - HarmonyOS 沙箱不提供真实 Linux 内核，无法实现任意 `apt`/systemd/docker；
 - ArkWeb 是 Chromium 内核，但没有 Chrome 扩展运行时，无法安装 Chrome Web Store 插件。
 

@@ -163,6 +163,15 @@ export class NativeRuntime {
     this.ensureDir(this.root + '/git-templates/branches');
   }
 
+  private async ensureQemuRoot(): Promise<void> {
+    const dest = this.context.filesDir + '/qemu-root';
+    const marker = dest + '/.dsh-rootfs-v3';
+    try { if (fs.accessSync(marker)) { return; } } catch (error) { /* 未安装或需升级 */ }
+    this.removeTree(dest);
+    await this.unpackRaw('qemu/rootfs.tar.gz', dest);
+    try { const f = fs.openSync(marker, fs.OpenMode.CREATE | fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC); fs.writeSync(f.fd, '3'); fs.closeSync(f); } catch (error) { /* 标记失败 */ }
+  }
+
   private writeLaunchers(): void {
     // 自研 host 直接 dlopen .so，不再需要 IECSO 启动器；只保留 argv0 路径。
     const bash = this.root + '/bin/bash';
@@ -218,7 +227,7 @@ export class NativeRuntime {
       '}\n';
     const tools = ['git', 'gh', 'python', 'python3', 'pip', 'node', 'rg', 'tar', 'cpio', 'unzip', 'zip',
       'diff', 'curl', 'jq', 'bc', 'less', 'nc', 'ssh', 'scp', 'sftp', 'openssl', 'tree', 'sqlite3',
-      'rsync', 'xz', 'zstd', 'hexdump', 'vim', 'toybox'];
+      'rsync', 'xz', 'zstd', 'hexdump', 'vim', 'toybox', 'qemu'];
     for (const name of tools) {
       if (name === 'python' || name === 'python3') {
         text += name + '() { if [ "$#" -eq 0 ]; then __dsh_interactive ' + name + ' -i -u; else __dsh_tool ' + name + ' "$@"; fi; }\n';
@@ -228,6 +237,10 @@ export class NativeRuntime {
     }
     text += 'npm() { __dsh_tool node "$IEC_SYSROOT/npm/bin/npm-cli.js" "$@"; }\n';
     text += 'npx() { __dsh_tool node "$IEC_SYSROOT/npm/bin/npx-cli.js" "$@"; }\n';
+    text += 'qemu-bash() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$IEC_SYSROOT/qemu-tools/bash" "$@"; }\n';
+    text += 'qemu-git() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$IEC_SYSROOT/qemu-tools/git" "$@"; }\n';
+    text += 'qemu-run() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$@"; }\n';
+    text += 'apk() { qemu-run "$IEC_SYSROOT/qemu-root/sbin/apk" "$@"; }\n';
     text += 'command_not_found_handle() {\n' +
       '  case "$1" in\n' +
       '    git-remote-http|git-remote-https|git-lfs) __dsh_tool "$1" "${@:2}";;\n' +
@@ -402,6 +415,7 @@ export class NativeRuntime {
     this.installing = false;
     if (onInstalling) { onInstalling(false); }
     hilog.info(0, 'DSH-RT', 'launchers');
+    await this.ensureQemuRoot();
     this.writeLaunchers();
     this.installToolLaunchers();
     hilog.info(0, 'DSH-RT', 'launchers ok');

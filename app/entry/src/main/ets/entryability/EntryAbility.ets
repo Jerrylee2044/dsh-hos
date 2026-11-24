@@ -77,7 +77,7 @@ export default class EntryAbility extends UIAbility {
 
     stage.loadContent('pages/Index').then(() => {
       if (this.win) { this.paintWindow(this.win); }
-      setTimeout(() => this.startCommandHost(), 1200);
+      // QEMU is served by the self-developed host; the old probe HTTP host is intentionally not started.
     }).catch(() => {});
   }
 
