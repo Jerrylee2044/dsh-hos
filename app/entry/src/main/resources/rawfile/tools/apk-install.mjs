@@ -7,7 +7,8 @@ import zlib from 'node:zlib';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ROOT = (process.env.IEC_SYSROOT || process.env.DSH_SYSROOT) + '/qemu-root';
+const SYSROOT = process.env.IEC_SYSROOT || process.env.DSH_SYSROOT;
+const ROOT = process.env.QEMU_ROOT || path.resolve(SYSROOT, '..', 'qemu-root');
 const CACHE = path.join(ROOT, '.apk-cache');
 const REPOS = [
   { name: 'main', url: 'https://mirrors.tuna.tsinghua.edu.cn/alpine/v3.20/main/x86_64' },
@@ -128,14 +129,42 @@ function extractApk(gz, dest) {
   }
 }
 
+
+function repairLibSymlinks(dir) {
+  let names = [];
+  try { names = fs.readdirSync(dir); } catch { return; }
+  for (const name of names) {
+    const p = path.join(dir, name);
+    let st; try { st = fs.lstatSync(p); } catch { continue; }
+    if (st.isDirectory()) { repairLibSymlinks(p); continue; }
+    const m = /^(.+\.so\.\d+)\.\d+(?:\.\d+)*$/.exec(name);
+    if (!m) continue;
+    const link = path.join(dir, m[1]);
+    try { if (!fs.existsSync(link)) { fs.copyFileSync(p, link); fs.chmodSync(link, st.mode & 0o777); } } catch {}
+  }
+}
+
 function depNames(text) {
   if (!text) return [];
   return text.split(/\s+/).filter(Boolean).map((d) => d.replace(/^[!]/, '').split(/[<>=~]/)[0])
-    .filter((d) => d && !d.startsWith('/') && !d.startsWith('so:') && !d.startsWith('cmd:') && !d.startsWith('pc:') && !d.startsWith('!'));
+    .filter((d) => d && !d.startsWith('/'));
 }
 
 async function install(names, seen = new Set()) {
+  console.log('rootfs', ROOT);
   const index = await indexAll();
+  const providers = new Map();
+  for (const p of index.values()) {
+    for (const provide of (p.p || '').split(/\s+/)) {
+      if (provide) providers.set(provide.split('=')[0], p.P);
+    }
+  }
+  const resolve = (dep) => {
+    const name = providers.get(dep);
+    if (name) return name;
+    if (dep.startsWith('so:') || dep.startsWith('cmd:') || dep.startsWith('pc:')) return undefined;
+    return dep;
+  };
   const queue = [...names];
   const order = [];
   while (queue.length) {
@@ -144,7 +173,7 @@ async function install(names, seen = new Set()) {
     seen.add(name);
     const pkg = index.get(name);
     if (!pkg) throw new Error('package not found: ' + name);
-    for (const dep of depNames(pkg.D)) queue.push(dep);
+    for (const dep of depNames(pkg.D)) { const r = resolve(dep); if (r) queue.push(r); }
     order.push(pkg);
   }
   for (const pkg of order) {
@@ -153,7 +182,11 @@ async function install(names, seen = new Set()) {
     const gz = await get(url);
     const file = path.join(CACHE, pkg.P + '-' + pkg.V + '.apk');
     fs.writeFileSync(file, gz);
+    console.log('extract', file);
     const result = await hostExec('tar', ['-xzf', file, '-C', ROOT, '--no-same-owner']);
+    console.log('tar result', result.code, result.body.toString('utf8').slice(0, 300));
+    repairLibSymlinks(path.join(ROOT, 'lib'));
+    repairLibSymlinks(path.join(ROOT, 'usr/lib'));
     if (result.code !== 0) {
       console.error('tar failed', result.code, result.body.toString('utf8').slice(0, 500));
       throw new Error('extract failed: ' + pkg.P);

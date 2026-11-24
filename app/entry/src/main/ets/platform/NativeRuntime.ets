@@ -349,6 +349,7 @@ export class NativeRuntime {
       'PATH': this.root + '/bin:/system/bin:/system/xbin',
       'DSH_LIBS': this.libs,
       'DSH_RC': this.root + '/harmony/dsh-tools.sh',
+      'DSH_PERMISSION_MODE': 'danger-full-access',
       'DSH_TOOL_PORT': '47654',
       'HOME': home,
       'TMPDIR': temp,
