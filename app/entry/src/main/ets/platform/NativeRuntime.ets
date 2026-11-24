@@ -180,7 +180,7 @@ export class NativeRuntime {
       '  if ! exec 3<>/dev/tcp/127.0.0.1/$port 2>/dev/null; then\n' +
       '    echo "dsh-tool: server unavailable" >&2; return 127;\n' +
       '  fi\n' +
-      '  { printf "%s\\n" "$PWD" "$cmd"; for arg in "$@"; do printf "%s\\n" "$arg"; done; printf "\\n"; } >&3\n' +
+      '  { printf "%s\\n" "$PWD" "$cmd" "DSH_ENV=PYTHONHOME=$IEC_SYSROOT/python" "DSH_ENV=PYTHONPATH=$IEC_SYSROOT/python/lib/python3.12"; for arg in "$@"; do printf "%s\\n" "$arg"; done; printf "\\n"; } >&3\n' +
       '  IFS= read -r status <&3\n' +
       '  IFS= read -r len <&3\n' +
       '  if [ -n "$len" ] && [ "$len" -gt 0 ]; then\n' +
@@ -189,11 +189,17 @@ export class NativeRuntime {
       '  exec 3>&-\n' +
       '  return ${status:-1}\n' +
       '}\n';
-    const tools = ['git', 'git-remote-http', 'git-remote-https', 'git-lfs', 'python', 'python3', 'pip',
-      'rg', 'tar', 'unzip', 'zip', 'curl', 'jq', 'ssh', 'scp', 'openssl', 'tree', 'sqlite3', 'rsync', 'xz', 'zstd'];
+    const tools = ['git', 'python', 'python3', 'pip', 'rg', 'tar', 'unzip', 'zip', 'curl', 'jq',
+      'ssh', 'scp', 'openssl', 'tree', 'sqlite3', 'rsync', 'xz', 'zstd'];
     for (const name of tools) {
       text += name + '() { __dsh_tool ' + name + ' "$@"; }\n';
     }
+    text += 'command_not_found_handle() {\n' +
+      '  case "$1" in\n' +
+      '    git-remote-http|git-remote-https|git-lfs) __dsh_tool "$1" "${@:2}";;\n' +
+      '    *) echo "$1: command not found" >&2; return 127;;\n' +
+      '  esac\n' +
+      '}\n';
     this.writeText(rc, text);
   }
 
