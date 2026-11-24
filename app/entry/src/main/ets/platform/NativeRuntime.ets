@@ -240,6 +240,8 @@ export class NativeRuntime {
     text += 'qemu-bash() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$IEC_SYSROOT/qemu-tools/bash" "$@"; }\n';
     text += 'qemu-git() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$IEC_SYSROOT/qemu-tools/git" "$@"; }\n';
     text += 'qemu-run() { __dsh_tool qemu -L "$IEC_SYSROOT/qemu-root" "$@"; }\n';
+    text += 'apk-real() { qemu-run "$IEC_SYSROOT/qemu-root/sbin/apk" "$@"; }\n';
+    text += 'apk() { __dsh_tool node "$IEC_SYSROOT/tools/apk-install.mjs" "$@"; }\n';
     text += 'apk() { qemu-run "$IEC_SYSROOT/qemu-root/sbin/apk" "$@"; }\n';
     text += 'command_not_found_handle() {\n' +
       '  case "$1" in\n' +
@@ -407,6 +409,8 @@ export class NativeRuntime {
       this.copyRawfile('tools/settings-general-about.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-settings-general/lib/client.js');
       this.copyRawfile('tools/subprocess-local-patched.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-subprocess-local/lib/index.js');
       this.copyRawfile('tools/sidebar-terminal-no-guide.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-sidebar-terminal/lib/client.js');
+      this.ensureDir(this.root + '/tools');
+      this.copyRawfile('tools/apk-install.mjs', this.root + '/tools/apk-install.mjs');
     } catch (error) {
       hilog.warn(0, 'DSH-RT', 'runtime shims unavailable');
     }
