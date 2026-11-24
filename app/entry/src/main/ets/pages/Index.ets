@@ -226,20 +226,42 @@ struct Index {
 
   private onWebSwipe(direction: string): void {
     hilog.info(0, 'DSH-WEB', 'onWebSwipe direction=%{public}s', direction);
-    const picker = 'const nodes=Array.from(document.querySelectorAll("button,[role=button]")).filter(n=>n.getClientRects().length>0);' +
-      'const label=n=>((n.getAttribute("aria-label")||"")+" "+(n.textContent||"")).trim();' +
-      'const pick=k=>nodes.find(n=>label(n).includes(k));';
-    const homeCheck = 'const bodyText=document.body.innerText||"";' +
-      'const visible=s=>Array.from(document.querySelectorAll("*")).some(n=>n.getClientRects().length>0&&n.children.length<=2&&(n.textContent||"").includes(s));' +
-      'const overlay=visible("打开配置文件")||visible("工作区文件")||visible("新建终端")||(visible("新会话")&&visible("插件"));' +
-      'const session=!overlay&&visible("发消息或创建任务");' +
-      'const isHome=!overlay&&visible("探索未至之境");' +
-      'if(session){return "session";}';
-    const homeButton = direction === 'right' ? '打开侧边栏' : '打开右侧边栏';
-    const homeResult = direction === 'right' ? 'left-sidebar' : 'right-sidebar';
-    const script = '(()=>{' + picker + homeCheck +
-      'if(isHome){const b=pick("' + homeButton + '");if(b){b.click();return "' + homeResult + '";}return "none";}' +
-      'try{location.href=location.origin+"/";return "root";}catch(e){return "none";}' +
+    const script = '(() => {' +
+      'try {' +
+      '  const nodes = Array.from(document.querySelectorAll("button,[role=button]")).filter(n => n.getClientRects().length > 0);' +
+      '  const label = n => ((n.getAttribute("aria-label") || "") + " " + (n.textContent || "")).trim();' +
+      '  const pick = k => nodes.find(n => label(n).includes(k));' +
+      '  const body = document.body.innerText || "";' +
+      // 1. 设置页：关闭设置
+      '  if (body.includes("打开配置文件")) {' +
+      '    const b = pick("关闭");' +
+      '    if (b) { b.click(); return "close-settings"; }' +
+      '    const esc = new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true });' +
+      '    document.dispatchEvent(esc); window.dispatchEvent(esc); return "settings-escape";' +
+      '  }' +
+      // 2. 图3 右侧栏：关闭右栏
+      '  if (body.includes("工作区文件") || body.includes("新建终端") || body.includes("更多工具")) {' +
+      '    let b = pick("收起右侧边栏") || pick("退出全屏") || pick("关闭");' +
+      '    if (b) { b.click(); return "close-right"; }' +
+      '    return "right-no-button";' +
+      '  }' +
+      // 3. 图2 左侧栏：关闭左栏
+      '  if (body.includes("新会话") && body.includes("插件")) {' +
+      '    let b = pick("收起侧边栏") || pick("关闭侧边栏") || pick("关闭");' +
+      '    if (b) { b.click(); return "close-left"; }' +
+      '    return "left-no-button";' +
+      '  }' +
+      // 4. 普通会话页：保持现状
+      '  if (body.includes("发消息或创建任务")) { return "session"; }' +
+      // 5. 图1 首页：左滑开图3，右滑开图2
+      '  if (body.includes("探索未至之境")) {' +
+      '    const button = direction === "right" ? "打开侧边栏" : "打开右侧边栏";' +
+      '    const b = pick(button);' +
+      '    if (b) { b.click(); return direction === "right" ? "left-sidebar" : "right-sidebar"; }' +
+      '    return "home-no-button";' +
+      '  }' +
+      '  return "none";' +
+      '} catch (e) { return "error"; }' +
       '})()';
     this.controller.runJavaScript(script).then((result: string) => {
       hilog.info(0, 'DSH-WEB', 'swipe %{public}s -> %{public}s', direction, result);
