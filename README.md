@@ -20,11 +20,11 @@ DSH HOS 是面向 HarmonyOS 的 **原生运行时 + 原生壳层**，把上游 D
 DSH engine   @deepseek-ai/dsh 0.2.3-alpha.2
 Node         24.22.x（OHOS 自研入口 dsh_node_main）
 Bash         GNU Bash 5.3（OHOS 自研入口 dsh_bash_main）
-设备         HUAWEI 畅享 90 / JUY-AL80，HarmonyOS 7
-应用         v388
+设备         Mate XTs (GRL-AL20) / HUAWEI 畅享 90 (JUY-AL80)，HarmonyOS 7
+应用         v425
 ```
 
-> Mate XTs 尚未在本次纯自研运行时上完成完整回归；JUY-AL80 已覆盖登录、对话、会话、设置、终端和返回手势。
+> **Mate XTs 已完成完整回归测试。** 当前版本在 Mate XTs 上覆盖启动、登录、模型、对话、会话持久化、工作区、右侧栏文件、新建终端、git/rg/python REPL、设置与关于页、系统浏览器链接、全屏沉浸式以及侧栏滑动返回。JUY-AL80 也已完成对应验证。
 
 ## 功能
 
@@ -40,7 +40,12 @@ Bash         GNU Bash 5.3（OHOS 自研入口 dsh_bash_main）
 | 终端外部工具：git / rg / python3 | 已真机验证 |
 | Python REPL 交互输入 | 已真机验证 |
 | 设置 + 独立“关于”页 | 已真机验证 |
-| 系统返回手势关闭设置/侧栏/面板，不退出应用 | 已真机验证 |
+| 关于页链接调用系统浏览器 | 已真机验证 |
+| 全屏沉浸式，上下无安全区留白 | 已真机验证 |
+| 首页左滑开图3、右滑开图2 | 已真机验证 |
+| 图2/图3/设置页任意方向滑回首页 | 已真机验证 |
+| 设置页顶部菜单横滑不误触返回 | 已真机验证 |
+| 系统返回键 / 手势关闭浮层，不退出应用 | 已真机验证 |
 
 ## 为什么做这个项目
 
@@ -216,7 +221,7 @@ entry/src/main/resources/rawfile/tools/
 这些文件较大（引擎约 100 MB、Node 库约 130 MB），不纳入 Git。可以直接从本项目的 unsigned HAP 中取出：
 
 ```bash
-unzip -q DSH-HOS-0.2.3-alpha.2-hos.388-unsigned.hap \
+unzip -q DSH-HOS-0.2.3-alpha.2-hos.425-unsigned.hap \
   'libs/arm64-v8a/*' 'resources/rawfile/*' -d /tmp/dsh-runtime
 cp -r /tmp/dsh-runtime/libs/arm64-v8a/* build/entry/libs/arm64-v8a/
 cp -r /tmp/dsh-runtime/resources/rawfile/* build/entry/src/main/resources/rawfile/
@@ -233,7 +238,7 @@ cp -r /tmp/dsh-runtime/resources/rawfile/* build/entry/src/main/resources/rawfil
 
 ## 已知限制
 
-- 当前主要在 JUY-AL80 / HarmonyOS 7 验证；其他机型需自行测试；
+- Mate XTs (GRL-AL20) 与 JUY-AL80 已验证；其他机型仍需自行测试；
 - 上游 `node-pty` 终端不可用，已统一到自研原生终端；
 - 运行时大资产不入 Git，源码构建需要额外资产包；
 - 非官方项目，不要用 DeepSeek 官方名义分发。
