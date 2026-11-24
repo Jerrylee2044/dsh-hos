@@ -258,8 +258,8 @@ struct Index {
       '  const openLeft = pick("打开侧边栏");' +
       '  const openRight = pick("打开右侧边栏");' +
       '  if (openLeft && openRight) {' +
-      '    if (dir === "right") { openLeft.click(); return "left-sidebar"; }' +
-      '    openRight.click(); return "right-sidebar";' +
+      '    if (dir === "right") { openRight.click(); return "right-sidebar"; }' +
+      '    openLeft.click(); return "left-sidebar";' +
       '  }' +
       '  return "none";' +
       '} catch (e) { return "error:" + String(e); }' +
