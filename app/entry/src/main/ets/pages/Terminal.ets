@@ -35,7 +35,7 @@ class HostShell {
     for (const key of Object.keys(env)) { envList.push(key + '=' + env[key]); }
     this.id = spawnHost({
       library: library, entry: 'dsh_bash_main',
-      argv: [command, '--noprofile', '--norc', '-i'], env: envList, cwd: cwd
+      argv: env['DSH_RC'] ? [command, '--noprofile', '--rcfile', env['DSH_RC'], '-i'] : [command, '--noprofile', '--norc', '-i'], env: envList, cwd: cwd
     });
     this.timer = setInterval(() => this.tick(), 30);
   }

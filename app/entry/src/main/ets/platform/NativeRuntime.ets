@@ -1,5 +1,6 @@
 import { common } from '@kit.AbilityKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
+import fileIO from '@ohos.fileio';
 import { util } from '@kit.ArkTS';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { probe as probeHost, spawn as spawnHost, poll as pollHost, write as writeHost, terminate as terminateHost, release as releaseHost, unpack as unpackHost, HostChunk } from 'host';
@@ -170,6 +171,32 @@ export class NativeRuntime {
     }
   }
 
+  private installToolLaunchers(): void {
+    const rc = this.root + '/harmony/dsh-tools.sh';
+    this.ensureDir(this.root + '/harmony');
+    let text = '__dsh_tool() {\n' +
+      '  local cmd="$1"; shift\n' +
+      '  local port="${DSH_TOOL_PORT:-47654}"\n' +
+      '  if ! exec 3<>/dev/tcp/127.0.0.1/$port 2>/dev/null; then\n' +
+      '    echo "dsh-tool: server unavailable" >&2; return 127;\n' +
+      '  fi\n' +
+      '  { printf "%s\\n" "$cmd"; for arg in "$@"; do printf "%s\\n" "$arg"; done; printf "\\n"; } >&3\n' +
+      '  IFS= read -r status <&3\n' +
+      '  IFS= read -r len <&3\n' +
+      '  if [ -n "$len" ] && [ "$len" -gt 0 ]; then\n' +
+      '    IFS= read -r -N "$len" out <&3; printf "%s" "$out";\n' +
+      '  fi\n' +
+      '  exec 3>&-\n' +
+      '  return ${status:-1}\n' +
+      '}\n';
+    const tools = ['git', 'git-remote-http', 'git-remote-https', 'git-lfs', 'python', 'python3', 'pip',
+      'rg', 'tar', 'unzip', 'zip', 'curl', 'jq', 'ssh', 'scp', 'openssl', 'tree', 'sqlite3', 'rsync', 'xz', 'zstd'];
+    for (const name of tools) {
+      text += name + '() { __dsh_tool ' + name + ' "$@"; }\n';
+    }
+    this.writeText(rc, text);
+  }
+
   private installPreloads(): void {
     this.ensureDir(this.root + '/harmony');
     for (const name of ['runtime-preload.cjs', 'fetch-polyfill.cjs', 'openssl.cnf']) {
@@ -265,6 +292,9 @@ export class NativeRuntime {
     const ca = this.root + '/certs/cacert.pem';
     return {
       'PATH': this.root + '/bin:/system/bin:/system/xbin',
+      'DSH_LIBS': this.libs,
+      'DSH_RC': this.root + '/harmony/dsh-tools.sh',
+      'DSH_TOOL_PORT': '47654',
       'HOME': home,
       'TMPDIR': temp,
       'SHELL': this.root + '/bin/bash',
@@ -331,6 +361,7 @@ export class NativeRuntime {
     if (onInstalling) { onInstalling(false); }
     hilog.info(0, 'DSH-RT', 'launchers');
     this.writeLaunchers();
+    this.installToolLaunchers();
     hilog.info(0, 'DSH-RT', 'launchers ok');
     this.installPreloads();
     this.installNotices();

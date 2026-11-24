@@ -25,6 +25,11 @@ extern char **environ;
 #include <unistd.h>
 #include <cstring>
 #include <vector>
+#include <thread>
+#include <atomic>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #ifndef DSH_HOST_API
 #define DSH_HOST_API 2
@@ -358,7 +363,146 @@ static napi_value Unpack(napi_env env, napi_callback_info info) {
   return out;
 }
 
+
+struct ToolMap { const char *name; const char *library; const char *entry; };
+static const ToolMap kHostTools[] = {
+  {"git", "libgit.so", "iec_git_main"},
+  {"git-remote-http", "libgit-remote-http.so", "iec_git_remote_http_main"},
+  {"git-remote-https", "libgit-remote-http.so", "iec_git_remote_http_main"},
+  {"git-lfs", "libgitlfscmd.so", "iec_gitlfs_main"},
+  {"python", "libpython.so", "Py_BytesMain"},
+  {"python3", "libpython.so", "Py_BytesMain"},
+  {"pip", "libpython.so", "iec_pip_main"},
+  {"rg", "librg.so", "iec_rg_main"},
+  {"tar", "libbsdtar.so", "iec_bsdtar_main"},
+  {"unzip", "libbsdunzip.so", "iec_bsdunzip_main"},
+  {"zip", "libzipcmd.so", "iec_zip_main"},
+  {"curl", "libcurlcmd.so", "iec_curl_main"},
+  {"jq", "libjqcmd.so", "iec_jq_main"},
+  {"ssh", "libdropbear.so", "iec_dropbear_main"},
+  {"scp", "libdropbear.so", "iec_dropbear_main"},
+  {"openssl", "libopensslcmd.so", "iec_openssl_main"},
+  {"tree", "libtreecmd.so", "iec_tree_main"},
+  {"sqlite3", "libsqlite3cmd.so", "iec_sqlite3_main"},
+  {"rsync", "librsynccmd.so", "iec_rsync_main"},
+  {"xz", "libxzcmd.so", "iec_xz_main"},
+  {"zstd", "libzstdcmd.so", "iec_zstd_main"},
+};
+
+static const char* ToolLibFor(const std::string& name, std::string& entry, std::string& lib) {
+  for (const auto& tool : kHostTools) {
+    if (name == tool.name) { lib = tool.library; entry = tool.entry; return tool.name; }
+  }
+  return nullptr;
+}
+
+static void ServeToolClient(int client) {
+  std::string request;
+  char buffer[4096];
+  while (request.find("\n\n") == std::string::npos) {
+    ssize_t n = read(client, buffer, sizeof(buffer));
+    if (n <= 0) { close(client); return; }
+    request.append(buffer, static_cast<size_t>(n));
+    if (request.size() > 1024 * 1024) { close(client); return; }
+  }
+  size_t end = request.find("\n\n");
+  std::string header = request.substr(0, end);
+  std::vector<std::string> lines;
+  size_t start = 0;
+  while (start <= header.size()) {
+    size_t next = header.find('\n', start);
+    if (next == std::string::npos) { lines.push_back(header.substr(start)); break; }
+    lines.push_back(header.substr(start, next - start));
+    start = next + 1;
+  }
+  if (lines.empty() || lines[0].empty()) { close(client); return; }
+  std::string command = lines[0];
+  std::string lib;
+  std::string entry;
+  if (ToolLibFor(command, entry, lib) == nullptr) {
+    std::string msg = "dsh-tool: unsupported command '" + command + "'\n";
+    std::string resp = "127\n" + std::to_string(msg.size()) + "\n" + msg;
+    write(client, resp.data(), resp.size());
+    close(client);
+    return;
+  }
+  std::vector<std::string> args;
+  args.push_back(command);
+  for (size_t i = 1; i < lines.size(); ++i) { args.push_back(lines[i]); }
+  int outPipe[2]; int errPipe[2];
+  if (pipe(outPipe) != 0 || pipe(errPipe) != 0) { close(client); return; }
+  pid_t pid = fork();
+  if (pid == 0) {
+    dup2(outPipe[1], STDOUT_FILENO);
+    dup2(errPipe[1], STDERR_FILENO);
+    close(outPipe[0]); close(outPipe[1]);
+    close(errPipe[0]); close(errPipe[1]);
+    std::string path = "/data/storage/el1/bundle/libs/arm64/" + lib;
+    void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (handle == nullptr) {
+      const char* err = dlerror();
+      const char* msg = err ? err : "dlopen failed";
+      write(STDERR_FILENO, msg, strlen(msg));
+      _exit(127);
+    }
+    int (*fn)(int, char**) = reinterpret_cast<int (*)(int, char**)>(dlsym(handle, entry.c_str()));
+    if (fn == nullptr) { _exit(127); }
+    std::vector<char*> argv;
+    for (auto& arg : args) { argv.push_back(const_cast<char*>(arg.c_str())); }
+    argv.push_back(nullptr);
+    int code = fn(static_cast<int>(argv.size() - 1), argv.data());
+    _exit(code);
+  }
+  close(outPipe[1]); close(errPipe[1]);
+  std::string output;
+  struct pollfd fds[2] = {{outPipe[0], POLLIN, 0}, {errPipe[0], POLLIN, 0}};
+  int openFds = 2;
+  while (openFds > 0) {
+    int ready = poll(fds, 2, 1000);
+    if (ready < 0) { break; }
+    for (int i = 0; i < 2; ++i) {
+      if (fds[i].fd < 0) { continue; }
+      if ((fds[i].revents & (POLLIN | POLLHUP | POLLERR)) != 0) {
+        ssize_t n = read(fds[i].fd, buffer, sizeof(buffer));
+        if (n > 0) { output.append(buffer, static_cast<size_t>(n)); }
+        else { close(fds[i].fd); fds[i].fd = -1; openFds--; }
+      }
+    }
+  }
+  int waitStatus = 0;
+  waitpid(pid, &waitStatus, 0);
+  int code = WIFEXITED(waitStatus) ? WEXITSTATUS(waitStatus) : 127;
+  std::string response = std::to_string(code) + "\n" + std::to_string(output.size()) + "\n" + output;
+  write(client, response.data(), response.size());
+  close(client);
+}
+
+static void StartToolServerOnce() {
+  static std::atomic<bool> started(false);
+  bool expected = false;
+  if (!started.compare_exchange_strong(expected, true)) { return; }
+  std::thread([]() {
+    int server = socket(AF_INET, SOCK_STREAM, 0);
+    if (server < 0) { return; }
+    int reuse = 1;
+    setsockopt(server, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(47654);
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if (bind(server, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) != 0) { close(server); return; }
+    if (listen(server, 8) != 0) { close(server); return; }
+    for (;;) {
+      int client = accept(server, nullptr, nullptr);
+      if (client < 0) { continue; }
+      std::thread(ServeToolClient, client).detach();
+    }
+  }).detach();
+}
+
 static napi_value Probe(napi_env env, napi_callback_info info) {
+  StartToolServerOnce();
   napi_value result;
   napi_create_object(env, &result);
   SetInt(env, result, "api", DSH_HOST_API);

@@ -28,7 +28,7 @@
 | 设置 | 通过 | 账号/通用/模型/插件/关于等标签可切换 |
 | 关于 | 通过 | 独立标签页，透明 logo，版本/链接正常 |
 | 终端启动 | 通过 | 原生终端进入 bash-5.3 |
-| 终端命令 | 部分通过 | `pwd`、`ls` 正常；`git`/`python` 尚无启动器 |
+| 终端命令 | 通过 | `pwd`、`ls`、`git --version` 正常；工具经自研 host TCP 启动器执行 |
 | 前后台 | 通过 | 切后台后重新打开保持状态 |
 | 终端输入法 | 通过 | v365 打开终端自动聚焦，键盘自动弹出 |
 | 崩溃 | 通过 | 当前日志未见 SIGSEGV/SIGSYS；仅有 SIGCHLD 链 |
@@ -39,18 +39,21 @@
 
 v365 已把 `/system/bin`、`/system/xbin` 加入终端 PATH，`ls`、`cat`、`sh`、`toybox` 等系统工具可用。
 
-仍缺：
+v368 起已增加自研 **host 工具启动服务**：
+
+- ArkTS host 在 `127.0.0.1:47654` 监听；
+- bash rc 为 `git/python/rg/...` 定义函数；
+- 函数把命令/参数发送给 host；
+- host fork/dlopen HAP 内 `.so` 入口并回传输出。
+
+真机验证：
 
 ```text
 bash-5.3$ git --version
-bash: git: command not found
-bash-5.3$ python3 --version
-bash: python3: command not found
+git version 2.56.0
 ```
 
-原因：HAP 内的 `libgit.so`、`libpython.so` 是宿主 `.so` 入口，没有生成 `git`/`python` 可执行启动器。
-
-建议：增加自研多调用启动器（`dsh_tool_main` 或独立 PIE 启动器）把命令映射到对应 `.so` 入口。
+说明：交互式工具（如 python REPL）的 stdin 尚未接入，脚本/一次性命令可用。
 
 ### P2 关于标签位置偏右
 
