@@ -238,10 +238,13 @@ struct Index {
     // 没有 history 时优先让页面关闭浮层（关闭按钮/Escape），并吞掉返回手势，避免直接退出应用。
     const script = '(() => {' +
       'try {' +
-      '  const labels = ["关闭", "Close", "收起", "返回"];' +
-      '  const nodes = Array.from(document.querySelectorAll("button,[role=button]"));' +
-      '  const close = nodes.find(n => labels.includes((n.getAttribute("aria-label") || n.textContent || "").trim()));' +
-      '  if (close) { close.click(); return "close"; }' +
+      '  const nodes = Array.from(document.querySelectorAll("button,[role=button]")).filter(n => n.getClientRects().length > 0);' +
+      '  const textOf = n => ((n.getAttribute("aria-label") || "") + " " + (n.textContent || "")).trim();' +
+      '  const priorities = ["关闭右侧边栏", "收起右侧边栏", "关闭", "Close", "退出全屏", "收起", "返回", "Back"];' +
+      '  for (const key of priorities) {' +
+      '    const hit = nodes.find(n => textOf(n).includes(key));' +
+      '    if (hit) { hit.click(); return "close:" + key; }' +
+      '  }' +
       '  const esc = new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true });' +
       '  document.dispatchEvent(esc); window.dispatchEvent(esc); return "escape";' +
       '} catch (e) { return "none"; }' +
