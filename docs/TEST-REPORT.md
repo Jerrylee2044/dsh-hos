@@ -28,7 +28,7 @@
 | 设置 | 通过 | 账号/通用/模型/插件/关于等标签可切换 |
 | 关于 | 通过 | 独立标签页，透明 logo，版本/链接正常 |
 | 终端启动 | 通过 | 原生终端进入 bash-5.3 |
-| 终端命令 | 通过 | `pwd`、`ls`、`git --version` 正常；工具经自研 host TCP 启动器执行 |
+| 终端命令 | 大部分通过 | `pwd`、`ls`、`git --version`/`git status` 正常；`python3 -c` 仍待排查 |
 | 前后台 | 通过 | 切后台后重新打开保持状态 |
 | 终端输入法 | 通过 | v365 打开终端自动聚焦，键盘自动弹出 |
 | 崩溃 | 通过 | 当前日志未见 SIGSEGV/SIGSYS；仅有 SIGCHLD 链 |
@@ -51,9 +51,11 @@ v368 起已增加自研 **host 工具启动服务**：
 ```text
 bash-5.3$ git --version
 git version 2.56.0
+bash-5.3$ git status --short
+fatal: not a git repository ...   # 已正确继承当前 PWD
 ```
 
-说明：交互式工具（如 python REPL）的 stdin 尚未接入，脚本/一次性命令可用。
+说明：`git` 已可用并继承终端当前工作目录；`python3 -c` 仍存在挂起问题，交互式 stdin 尚未接入。
 
 ### P2 关于标签位置偏右
 

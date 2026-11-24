@@ -180,7 +180,7 @@ export class NativeRuntime {
       '  if ! exec 3<>/dev/tcp/127.0.0.1/$port 2>/dev/null; then\n' +
       '    echo "dsh-tool: server unavailable" >&2; return 127;\n' +
       '  fi\n' +
-      '  { printf "%s\\n" "$cmd"; for arg in "$@"; do printf "%s\\n" "$arg"; done; printf "\\n"; } >&3\n' +
+      '  { printf "%s\\n" "$PWD" "$cmd"; for arg in "$@"; do printf "%s\\n" "$arg"; done; printf "\\n"; } >&3\n' +
       '  IFS= read -r status <&3\n' +
       '  IFS= read -r len <&3\n' +
       '  if [ -n "$len" ] && [ "$len" -gt 0 ]; then\n' +

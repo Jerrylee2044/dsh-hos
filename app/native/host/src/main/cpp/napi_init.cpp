@@ -415,8 +415,9 @@ static void ServeToolClient(int client) {
     lines.push_back(header.substr(start, next - start));
     start = next + 1;
   }
-  if (lines.empty() || lines[0].empty()) { close(client); return; }
-  std::string command = lines[0];
+  if (lines.size() < 2 || lines[1].empty()) { close(client); return; }
+  std::string cwd = lines[0];
+  std::string command = lines[1];
   std::string lib;
   std::string entry;
   if (ToolLibFor(command, entry, lib) == nullptr) {
@@ -428,7 +429,7 @@ static void ServeToolClient(int client) {
   }
   std::vector<std::string> args;
   args.push_back(command);
-  for (size_t i = 1; i < lines.size(); ++i) { args.push_back(lines[i]); }
+  for (size_t i = 2; i < lines.size(); ++i) { args.push_back(lines[i]); }
   int outPipe[2]; int errPipe[2];
   if (pipe(outPipe) != 0 || pipe(errPipe) != 0) { close(client); return; }
   pid_t pid = fork();
@@ -437,6 +438,7 @@ static void ServeToolClient(int client) {
     dup2(errPipe[1], STDERR_FILENO);
     close(outPipe[0]); close(outPipe[1]);
     close(errPipe[0]); close(errPipe[1]);
+    if (!cwd.empty()) { (void)chdir(cwd.c_str()); }
     std::string path = "/data/storage/el1/bundle/libs/arm64/" + lib;
     void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (handle == nullptr) {
@@ -579,6 +581,7 @@ static napi_value Spawn(napi_env env, napi_callback_info info) {
     close(inPipe[0]); close(inPipe[1]);
     close(outPipe[0]); close(outPipe[1]);
     close(errPipe[0]); close(errPipe[1]);
+    if (!cwd.empty()) { (void)chdir(cwd.c_str()); }
     if (!cwd.empty()) { chdir(cwd.c_str()); }
     // 以库入口方式启动时不会经过 execve，全局 environ 仍是应用进程的环境；
     // 必须显式替换，否则 Node 的 os.homedir() 会去读系统用户目录。
