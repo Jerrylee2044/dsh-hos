@@ -56,6 +56,9 @@ struct Index {
   private termOwner: string = '';
   private themeListener?: mediaquery.MediaQueryListener;
   private started: boolean = false;
+  private touchStartX: number = 0;
+  private touchStartY: number = 0;
+  private touchStartAt: number = 0;
 
   aboutToAppear(): void {
     this.watchTheme();
@@ -218,7 +221,7 @@ struct Index {
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
       '(function(){var sx=0,sy=0,st=0,active=false;' +
       'document.addEventListener("touchstart",function(e){if(e.touches.length!==1){active=false;return;}var t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;},true);' +
-      'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}try{console.log("DSH_SWIPE:"+(dx>0?"right":"left"));}catch(x){}},true);})();';
+      'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}try{console.log("DSH_SWIPE:"+(dx>0?"right":"left"));}catch(x){}},true);})();'
   }
 
   private onWebSwipe(direction: string): void {
@@ -226,12 +229,15 @@ struct Index {
     const picker = 'const nodes=Array.from(document.querySelectorAll("button,[role=button]")).filter(n=>n.getClientRects().length>0);' +
       'const label=n=>((n.getAttribute("aria-label")||"")+" "+(n.textContent||"")).trim();' +
       'const pick=k=>nodes.find(n=>label(n).includes(k));';
-    const bodyText = 'const bodyText=document.body.innerText||"";';
-    const homeCheck = 'const home=Array.from(document.querySelectorAll("*")).some(n=>n.getClientRects().length>0&&n.children.length<=2&&(n.textContent||"").includes("描述你想要构建的内容"));' +
-      'const isHome=home||bodyText.includes("探索未至之境");';
+    const homeCheck = 'const bodyText=document.body.innerText||"";' +
+      'const visible=s=>Array.from(document.querySelectorAll("*")).some(n=>n.getClientRects().length>0&&n.children.length<=2&&(n.textContent||"").includes(s));' +
+      'const overlay=visible("打开配置文件")||visible("工作区文件")||visible("新建终端")||(visible("新会话")&&visible("插件"));' +
+      'const session=!overlay&&visible("发消息或创建任务");' +
+      'const isHome=!overlay&&visible("探索未至之境");' +
+      'if(session){return "session";}';
     const homeButton = direction === 'right' ? '打开侧边栏' : '打开右侧边栏';
     const homeResult = direction === 'right' ? 'left-sidebar' : 'right-sidebar';
-    const script = '(()=>{' + picker + bodyText + homeCheck +
+    const script = '(()=>{' + picker + homeCheck +
       'if(isHome){const b=pick("' + homeButton + '");if(b){b.click();return "' + homeResult + '";}return "none";}' +
       'try{location.href=location.origin+"/";return "root";}catch(e){return "none";}' +
       '})()';
@@ -396,45 +402,13 @@ struct Index {
         })
       }
 
-      // 边缘热区：系统返回手势已关闭，由壳层独立接管边缘横滑，
-      // 避免 Web 滚动/输入框抢占 ArkUI PanGesture。
-      Row() {
-        Row()
-          .width(18)
-          .height('100%')
-          .backgroundColor('#01000000')
-          .hitTestBehavior(HitTestMode.Block)
-          .gesture(PanGesture({ distance: 10, direction: PanDirection.Horizontal })
-            .onActionEnd((event: GestureEvent) => {
-              if (Math.abs(event.offsetX) < 40) { return; }
-              this.onWebSwipe(event.offsetX > 0 ? 'right' : 'left');
-            }))
-        Blank()
-      }
-      .width('100%')
-      .height('100%')
-      .hitTestBehavior(HitTestMode.Transparent)
 
-      Row() {
-        Blank()
-        Row()
-          .width(18)
-          .height('100%')
-          .backgroundColor('#01000000')
-          .hitTestBehavior(HitTestMode.Block)
-          .gesture(PanGesture({ distance: 10, direction: PanDirection.Horizontal })
-            .onActionEnd((event: GestureEvent) => {
-              if (Math.abs(event.offsetX) < 40) { return; }
-              this.onWebSwipe(event.offsetX < 0 ? 'left' : 'right');
-            }))
-      }
-      .width('100%')
-      .height('100%')
-      .hitTestBehavior(HitTestMode.Transparent)
+
     }
     .width('100%')
     .height('100%')
     .backgroundColor(this.bg)
     .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.KEYBOARD], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+
   }
 }
