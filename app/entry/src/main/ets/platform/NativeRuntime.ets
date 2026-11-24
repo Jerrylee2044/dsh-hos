@@ -204,12 +204,16 @@ export class NativeRuntime {
       '    echo "dsh-tool: server unavailable" >&2; return 127;\n' +
       '  fi\n' +
       '  { printf "%s\\nINTERACTIVE\\n%s\\n" "$PWD" "$cmd"; printf "DSH_ENV=PYTHONHOME=%s\\n" "$IEC_SYSROOT/python"; printf "DSH_ENV=PYTHONPATH=%s\\n" "$IEC_SYSROOT/python/lib/python3.12"; for arg in "$@"; do printf "%s\\n" "$arg"; done; printf "\\n"; } >&3\n' +
+      '  local catpid inpid\n' +
       '  cat <&3 &\n' +
-      '  local catpid=$!\n' +
-      '  while kill -0 "$catpid" 2>/dev/null; do\n' +
-      '    if IFS= read -r -t 0.1 line; then printf "%s\\n" "$line" >&3; fi\n' +
+      '  catpid=$!\n' +
+      '  while :; do\n' +
+      '    if IFS= read -r -t 0.2 line; then\n' +
+      '      printf "%s\\n" "$line" >&3\n' +
+      '      if [ "$line" = "exit()" ]; then break; fi\n' +
+      '    fi\n' +
       '  done\n' +
-      '  wait "$catpid" 2>/dev/null\n' +
+      '  kill "$catpid" 2>/dev/null\n' +
       '  exec 3>&-\n' +
       '}\n';
     const tools = ['git', 'python', 'python3', 'pip', 'rg', 'tar', 'unzip', 'zip', 'curl', 'jq',
