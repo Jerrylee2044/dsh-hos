@@ -366,6 +366,7 @@ static napi_value Unpack(napi_env env, napi_callback_info info) {
 
 struct ToolMap { const char *name; const char *library; const char *entry; };
 static const ToolMap kHostTools[] = {
+  {"bash", "libbash.so", "dsh_bash_main"},
   {"git", "libgit.so", "iec_git_main"},
   {"gh", "libghcmd.so", "iec_gh_main"},
   {"bc", "libbccmd.so", "iec_bc_main"},
