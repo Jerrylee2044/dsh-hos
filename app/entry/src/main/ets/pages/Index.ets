@@ -232,33 +232,27 @@ struct Index {
       '  const label = n => ((n.getAttribute("aria-label") || "") + " " + (n.textContent || "")).trim();' +
       '  const pick = k => nodes.find(n => label(n).includes(k));' +
       '  const body = document.body.innerText || "";' +
-      // 1. 设置页：关闭设置
-      '  if (body.includes("打开配置文件")) {' +
+      // 设置页
+      '  if (pick("打开配置文件")) {' +
       '    const b = pick("关闭");' +
       '    if (b) { b.click(); return "close-settings"; }' +
       '    const esc = new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true });' +
       '    document.dispatchEvent(esc); window.dispatchEvent(esc); return "settings-escape";' +
       '  }' +
-      // 2. 图3 右侧栏：关闭右栏
-      '  if (body.includes("工作区文件") || body.includes("新建终端") || body.includes("更多工具")) {' +
-      '    let b = pick("收起右侧边栏") || pick("退出全屏") || pick("关闭");' +
-      '    if (b) { b.click(); return "close-right"; }' +
-      '    return "right-no-button";' +
-      '  }' +
-      // 3. 图2 左侧栏：关闭左栏
-      '  if (body.includes("新会话") && body.includes("插件")) {' +
-      '    let b = pick("收起侧边栏") || pick("关闭侧边栏") || pick("关闭");' +
-      '    if (b) { b.click(); return "close-left"; }' +
-      '    return "left-no-button";' +
-      '  }' +
-      // 4. 普通会话页：保持现状
+      // 图2 左侧栏
+      '  const collapseLeft = pick("收起侧边栏");' +
+      '  if (collapseLeft) { collapseLeft.click(); return "close-left"; }' +
+      // 图3 右侧栏
+      '  const collapseRight = pick("收起右侧边栏") || pick("退出全屏");' +
+      '  if (collapseRight) { collapseRight.click(); return "close-right"; }' +
+      // 普通会话
       '  if (body.includes("发消息或创建任务")) { return "session"; }' +
-      // 5. 图1 首页：左滑开图3，右滑开图2
-      '  if (body.includes("探索未至之境")) {' +
-      '    const button = direction === "right" ? "打开侧边栏" : "打开右侧边栏";' +
-      '    const b = pick(button);' +
-      '    if (b) { b.click(); return direction === "right" ? "left-sidebar" : "right-sidebar"; }' +
-      '    return "home-no-button";' +
+      // 图1 首页：左滑开图3，右滑开图2
+      '  const openLeft = pick("打开侧边栏");' +
+      '  const openRight = pick("打开右侧边栏");' +
+      '  if (openLeft && openRight) {' +
+      '    const target = direction === "right" ? openLeft : openRight;' +
+      '    target.click(); return direction === "right" ? "left-sidebar" : "right-sidebar";' +
       '  }' +
       '  return "none";' +
       '} catch (e) { return "error"; }' +
