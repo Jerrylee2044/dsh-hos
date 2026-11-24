@@ -28,26 +28,29 @@
 | 设置 | 通过 | 账号/通用/模型/插件/关于等标签可切换 |
 | 关于 | 通过 | 独立标签页，透明 logo，版本/链接正常 |
 | 终端启动 | 通过 | 原生终端进入 bash-5.3 |
-| 终端命令 | 部分通过 | `pwd` 正常；`git` 不在终端 PATH |
+| 终端命令 | 部分通过 | `pwd`、`ls` 正常；`git`/`python` 尚无启动器 |
 | 前后台 | 通过 | 切后台后重新打开保持状态 |
+| 终端输入法 | 通过 | v365 打开终端自动聚焦，键盘自动弹出 |
 | 崩溃 | 通过 | 当前日志未见 SIGSEGV/SIGSYS；仅有 SIGCHLD 链 |
 
 ## 问题清单
 
-### P1 终端外部工具缺失
+### P1 终端外部工具不完整
 
-现象：
+v365 已把 `/system/bin`、`/system/xbin` 加入终端 PATH，`ls`、`cat`、`sh`、`toybox` 等系统工具可用。
+
+仍缺：
 
 ```text
 bash-5.3$ git --version
 bash: git: command not found
+bash-5.3$ python3 --version
+bash: python3: command not found
 ```
 
-原因：当前自研运行时只创建 `bin/node`、`bin/bash` 启动器，没有为 `git/ls/python/rg` 等生成可执行启动器。终端目前只能保证 bash 内建命令和 Node。
+原因：HAP 内的 `libgit.so`、`libpython.so` 是宿主 `.so` 入口，没有生成 `git`/`python` 可执行启动器。
 
-影响：终端内无法直接使用 git、ls、python 等外部工具；DSH Agent 的文件工具不受影响。
-
-建议：为自研 host 增加命令启动器机制，或明确终端为 bash-only。
+建议：增加自研多调用启动器（`dsh_tool_main` 或独立 PIE 启动器）把命令映射到对应 `.so` 入口。
 
 ### P2 关于标签位置偏右
 
