@@ -57,15 +57,26 @@ ps top kill df du free date uname whoami id env
 sh sleep timeout nohup ping
 ```
 
-Bash 内建：`cd`、`pwd`、`echo`、`export`、`alias`、`source` 等。
+Bash 内建（61 个）：
+
+```text
+: . [ alias bg bind break builtin caller cd command
+compgen complete compopt continue declare dirs disown
+echo enable eval exec exit export false fc fg getopts
+hash help history jobs kill let local logout mapfile
+popd printf pushd pwd read readarray readonly return
+set shift shopt source suspend test times trap true
+type typeset ulimit umask unalias unset wait
+```
 
 ## 统计口径
 
 - 自研 host 工具：**29 个**
 - npm/npx：**2 个**
 - Git 辅助入口：**3 个**
-- 合计显式命令入口：**34 个**
-- 系统 toybox/applet 和 Bash 内建未计入，实际可用命令更多。
+- Bash 内建：**61 个**
+- 合计显式命令入口：**95 个**
+- 系统 toybox/applet 未计入，实际可用命令更多。
 
 ## 当前未包含
 
