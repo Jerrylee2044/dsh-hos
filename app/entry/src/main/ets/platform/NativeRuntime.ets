@@ -367,6 +367,7 @@ export class NativeRuntime {
       this.copyRawfile('tools/flock-shim.js', this.root + '/engine/node_modules/@deepseek-ai/node-addon-system/lib/flock.js');
       this.copyRawfile('tools/settings-general-about.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-settings-general/lib/client.js');
       this.copyRawfile('tools/subprocess-local-patched.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-subprocess-local/lib/index.js');
+      this.copyRawfile('tools/sidebar-terminal-no-guide.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-sidebar-terminal/lib/client.js');
     } catch (error) {
       hilog.warn(0, 'DSH-RT', 'runtime shims unavailable');
     }

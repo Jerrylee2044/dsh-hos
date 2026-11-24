@@ -185,13 +185,13 @@ window.__ModuleLoader__.load({
             id: TAB_ID,
             kind: TAB_KIND,
             priority: 'extension',
-            multiple: false,
+            multiple: true,
             keepMounted: true,
             title: function () { return '终端'; },
             guide: [{
               id: 'new', order: 20,
-              title: function () { return '原生终端'; },
-              description: function () { return '在侧栏运行 shell，画面由系统原生绘制'; }
+              title: function () { return '新建终端'; },
+              description: function () { return '新建原生终端标签，运行 bash'; }
             }]
           });
         }, 'dsh-hos.terminal.type');
