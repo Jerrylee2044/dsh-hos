@@ -1,0 +1,38 @@
+# build products
+build/
+out/
+*.hap
+*.app
+*.abc
+*.so
+
+# signing material: never commit
+signing/
+*.p12
+*.jks
+*.cer
+*.p7b
+*.csr
+
+# caches
+.cache/
+.bootstrap/
+node_modules/
+oh_modules/
+build/
+entry/build/
+
+# vendored app build outputs / runtime assets
+app/entry/build/
+app/entry/libs/
+app/entry/oh_modules/
+app/oh_modules/
+app/.hvigor/
+app/entry/src/main/resources/rawfile/tools/
+app/native/iec/platform/ohos/har/build/
+app/native/iec/build/
+
+app/**/.cxx/
+
+# QEMU host runtime assets fetched/built by scripts
+app/entry/src/main/resources/rawfile/qemu/

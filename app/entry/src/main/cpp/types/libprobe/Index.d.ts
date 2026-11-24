@@ -1,0 +1,12 @@
+export const run: () => string;
+export const runQemu: (path: string) => string;
+export const runQemuBusybox: (path: string) => string;
+export const runQemuBash: (path: string) => string;
+export const startGuest: (path: string, applet?: string) => string;
+export const execGuest: (cmd: string) => string;
+export const stopGuest: () => string;
+export const chmodPath: (path: string) => number;
+export const runQemuTool: (path: string, arg?: string) => string;
+export const ptyTest: () => string;
+export const execCommand: (dir: string, cmd: string) => string;
+export const startHttp: (dir: string) => string;

@@ -1,0 +1,87 @@
+# ---- 依赖 ----
+node_modules/
+oh_modules/
+
+# ---- 构建产物 ----
+.hvigor/
+build/
+entry/build/
+build-cmake/
+dist/
+.cxx/
+.preview/
+.test/
+.test-build/
+coverage/
+*.hap
+*.hsp
+*.app
+*.har
+*.abc
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.dSYM/
+compile_commands.json
+BuildProfile.ets
+
+# ---- 本地配置与签名材料 ----
+local.properties
+*.local
+.env
+.env.*
+!.env.example
+.npmrc
+.ohpmrc
+.sign/
+.ohos/
+signing.local.profile.json5
+signing.config.json5
+*.p12
+*.p7b
+*.cer
+*.csr
+*.jks
+*.keystore
+
+# ---- 原生预编译产物与第三方包 ----
+# npm.tar.gz 是 build_node.sh 的构建产物，不再进入版本库；
+# 发布流程需要 `git rm --cached` 移除旧的跟踪项（见 docs/SOURCES.md）。
+entry/libs/
+entry/src/main/resources/rawfile/tools/*.tar
+entry/src/main/resources/rawfile/tools/*.tar.gz
+entry/src/main/resources/rawfile/tools/*.tar.xz
+entry/src/main/resources/rawfile/tools/*.zip
+entry/src/main/resources/rawfile/tools/*.sha256
+
+# ---- IDE / 编辑器 ----
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+*.rej
+*.tmp
+
+# ---- 日志与崩溃 ----
+*.log
+*.hprof
+hs_err_pid*
+core.*
+vgcore.*
+
+# ---- macOS / Windows 系统文件 ----
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
+
+# 本机签名配置（含证书路径与口令），仓库只保留 build-profile.example.json5
+build-profile.json5
+entry/src/main/resources/rawfile/harmony/extra-ca.pem
+.local/

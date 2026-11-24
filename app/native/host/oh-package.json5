@@ -1,0 +1,11 @@
+{
+  "name": "host",
+  "version": "0.1.0",
+  "description": "DSH HOS self-developed native host",
+  "main": "./src/main/ets/Index.ets",
+  "author": "DSH HOS",
+  "license": "MIT",
+  "dependencies": {
+    "libdsh_host.so": "file:./src/main/cpp/types/libdsh_host"
+  }
+}
