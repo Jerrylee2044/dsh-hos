@@ -226,17 +226,15 @@ struct Index {
     const picker = 'const nodes=Array.from(document.querySelectorAll("button,[role=button]")).filter(n=>n.getClientRects().length>0);' +
       'const label=n=>((n.getAttribute("aria-label")||"")+" "+(n.textContent||"")).trim();' +
       'const pick=k=>nodes.find(n=>label(n).includes(k));';
-    const home = 'const bodyText=document.body.innerText||"";' +
-      'const home=bodyText.includes("描述你想要构建的内容")&&!bodyText.includes("发消息或创建任务");';
-    const root = 'for(const k of ["关闭右侧边栏","收起右侧边栏","关闭","Close","退出全屏","收起","返回"]){const b=pick(k);if(b){b.click();return "close:"+k;}}' +
-      'const all=Array.from(document.querySelectorAll("button,[role=button]"));' +
-      'const ns=all.find(n=>label(n).includes("新会话"));if(ns){ns.click();return "new-session";}' +
-      'try{window.history.back();return "history";}catch(e){return "none";}';
+    const bodyText = 'const bodyText=document.body.innerText||"";';
+    const homeCheck = 'const home=Array.from(document.querySelectorAll("*")).some(n=>n.getClientRects().length>0&&n.children.length<=2&&(n.textContent||"").includes("描述你想要构建的内容"));' +
+      'const isHome=home||bodyText.includes("探索未至之境");';
     const homeButton = direction === 'right' ? '打开侧边栏' : '打开右侧边栏';
     const homeResult = direction === 'right' ? 'left-sidebar' : 'right-sidebar';
-    const script = '(()=>{' + picker + home +
-      'if(home){const b=pick("' + homeButton + '");if(b){b.click();return "' + homeResult + '";}return "none";}' +
-      root + '})()';
+    const script = '(()=>{' + picker + bodyText + homeCheck +
+      'if(isHome){const b=pick("' + homeButton + '");if(b){b.click();return "' + homeResult + '";}return "none";}' +
+      'try{location.href=location.origin+"/";return "root";}catch(e){return "none";}' +
+      '})()';
     this.controller.runJavaScript(script).then((result: string) => {
       hilog.info(0, 'DSH-WEB', 'swipe %{public}s -> %{public}s', direction, result);
     }).catch(() => {
@@ -397,17 +395,46 @@ struct Index {
           onClose: () => { this.termShown = false; this.termVisible = false; this.termOwner = ''; }
         })
       }
+
+      // 边缘热区：系统返回手势已关闭，由壳层独立接管边缘横滑，
+      // 避免 Web 滚动/输入框抢占 ArkUI PanGesture。
+      Row() {
+        Row()
+          .width(18)
+          .height('100%')
+          .backgroundColor('#01000000')
+          .hitTestBehavior(HitTestMode.Block)
+          .gesture(PanGesture({ distance: 10, direction: PanDirection.Horizontal })
+            .onActionEnd((event: GestureEvent) => {
+              if (Math.abs(event.offsetX) < 40) { return; }
+              this.onWebSwipe(event.offsetX > 0 ? 'right' : 'left');
+            }))
+        Blank()
+      }
+      .width('100%')
+      .height('100%')
+      .hitTestBehavior(HitTestMode.Transparent)
+
+      Row() {
+        Blank()
+        Row()
+          .width(18)
+          .height('100%')
+          .backgroundColor('#01000000')
+          .hitTestBehavior(HitTestMode.Block)
+          .gesture(PanGesture({ distance: 10, direction: PanDirection.Horizontal })
+            .onActionEnd((event: GestureEvent) => {
+              if (Math.abs(event.offsetX) < 40) { return; }
+              this.onWebSwipe(event.offsetX < 0 ? 'left' : 'right');
+            }))
+      }
+      .width('100%')
+      .height('100%')
+      .hitTestBehavior(HitTestMode.Transparent)
     }
     .width('100%')
     .height('100%')
     .backgroundColor(this.bg)
     .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.KEYBOARD], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
-    .parallelGesture(
-      PanGesture({ distance: 24, direction: PanDirection.Horizontal })
-        .onActionEnd((event: GestureEvent) => {
-          if (Math.abs(event.offsetX) < 60) { return; }
-          this.onWebSwipe(event.offsetX > 0 ? 'right' : 'left');
-        })
-    )
   }
 }
