@@ -24,6 +24,11 @@ export default class EntryAbility extends UIAbility {
   private makeImmersive(win: window.Window): void {
     try { win.setWindowLayoutFullScreen(true); } catch (error) { /* 老版本忽略 */ }
     try { win.setWindowSystemBarEnable([]); } catch (error) { /* 老版本忽略 */ }
+    // 关闭系统侧滑返回热区，改为应用内左右滑手势：
+    // 首页左滑开右栏、右滑开左栏，其他页面左滑返回。
+    try {
+      win.setGestureBackEnabled(false).catch(() => {});
+    } catch (error) { /* 版本不支持 */ }
   }
 
   private paintWindow(win: window.Window): void {
