@@ -219,12 +219,40 @@ struct Index {
   }
 
   onBackPress(): boolean {
+    // 先关闭右侧原生终端，再把返回手势交给 DSH Web 的历史栈。
     if (this.termShown) {
       this.termShown = false;
       this.termVisible = false;
       return true;
     }
-    return false;
+    try {
+      if (this.controller.accessBackward()) {
+        this.controller.backward();
+        hilog.info(0, 'DSH-WEB', 'back: web history backward');
+        return true;
+      }
+    } catch (error) {
+      hilog.warn(0, 'DSH-WEB', 'back: accessBackward failed');
+    }
+    // DSH 是 SPA，设置/侧栏等浮层不会进入浏览器 history。
+    // 没有 history 时优先让页面关闭浮层（关闭按钮/Escape），并吞掉返回手势，避免直接退出应用。
+    const script = '(() => {' +
+      'try {' +
+      '  const labels = ["关闭", "Close", "收起", "返回"];' +
+      '  const nodes = Array.from(document.querySelectorAll("button,[role=button]"));' +
+      '  const close = nodes.find(n => labels.includes((n.getAttribute("aria-label") || n.textContent || "").trim()));' +
+      '  if (close) { close.click(); return "close"; }' +
+      '  const esc = new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true });' +
+      '  document.dispatchEvent(esc); window.dispatchEvent(esc); return "escape";' +
+      '} catch (e) { return "none"; }' +
+      '})()';
+    this.controller.runJavaScript(script).then((result: string) => {
+      hilog.info(0, 'DSH-WEB', 'back overlay result %{public}s', result);
+    }).catch(() => {
+      hilog.warn(0, 'DSH-WEB', 'back overlay script failed');
+    });
+    hilog.info(0, 'DSH-WEB', 'back: handled by overlay fallback');
+    return true;
   }
 
   @Builder
