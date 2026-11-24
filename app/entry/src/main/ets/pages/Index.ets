@@ -215,7 +215,34 @@ struct Index {
       'Object.defineProperty(w.location,"href",{get:function(){return u||""},set:function(v){report(v)}});' +
       'try{Object.defineProperty(w,"location",{get:function(){return w.location},set:function(v){report(v)}})}catch(e){};' +
       'return w};' +
-      'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);';
+      'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
+      '(function(){var sx=0,sy=0,st=0,active=false;' +
+      'document.addEventListener("touchstart",function(e){if(e.touches.length!==1){active=false;return;}var t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;},true);' +
+      'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}try{console.log("DSH_SWIPE:"+(dx>0?"right":"left"));}catch(x){}},true);})();';
+  }
+
+  private onWebSwipe(direction: string): void {
+    const dir = JSON.stringify(direction);
+    const closePicker = 'const nodes=Array.from(document.querySelectorAll("button,[role=button]")).filter(n=>n.getClientRects().length>0);' +
+      'const label=n=>((n.getAttribute("aria-label")||"")+" "+(n.textContent||"")).trim();' +
+      'const pick=k=>nodes.find(n=>label(n).includes(k));';
+    const script = direction === 'right'
+      ? '(()=>{' + closePicker + 'const b=pick("打开侧边栏");if(b){b.click();return "left-sidebar";}return "none";})()'
+      : '(()=>{' + closePicker +
+        'const visible=n=>n.getClientRects().length>0;' +
+        'const home=Array.from(document.querySelectorAll("*")).some(n=>visible(n)&&n.children.length===0&&(n.textContent||"").trim()==="探索未至之境");' +
+        'if(home){const b=pick("打开右侧边栏");if(b){b.click();return "right-sidebar";}return "none";}' +
+        'for(const k of ["关闭右侧边栏","收起右侧边栏","关闭","Close","退出全屏","收起","返回"]){const b=pick(k);if(b){b.click();return "close:"+k;}}' +
+        'const all=Array.from(document.querySelectorAll("button,[role=button]"));' +
+        'const ns=all.find(n=>label(n).includes("新会话"));if(ns){ns.click();return "new-session";}' +
+        'const openLeft=all.find(n=>label(n).includes("打开侧边栏"));if(openLeft){openLeft.click();return "open-left";}' +
+        'try{window.history.back();return "history";}catch(e){return "none";}' +
+        '})()';
+    this.controller.runJavaScript(script).then((result: string) => {
+      hilog.info(0, 'DSH-WEB', 'swipe %{public}s -> %{public}s', direction, result);
+    }).catch(() => {
+      hilog.warn(0, 'DSH-WEB', 'swipe script failed');
+    });
   }
 
   onBackPress(): boolean {
@@ -276,7 +303,6 @@ struct Index {
     .height('100%')
     .justifyContent(FlexAlign.Center)
     .backgroundColor(this.bg)
-    .padding({ top: this.insetTop, bottom: this.insetBottom })
   }
 
   build() {
@@ -303,6 +329,10 @@ struct Index {
               if (message.indexOf('DSH_OPEN:') === 0) {
                 hilog.info(0, 'DSH-WEB', 'open external %{public}s', message.slice(8));
                 this.openExternal(message.slice(8));
+                return true;
+              }
+              if (message.indexOf('DSH_SWIPE:') === 0) {
+                this.onWebSwipe(message.slice(10));
                 return true;
               }
               try { this.onBridge(message); } catch (error) { /* 非桥消息 */ }
@@ -348,7 +378,6 @@ struct Index {
         }
         .width('100%')
         .height('100%')
-        .padding({ top: this.insetTop, bottom: this.insetBottom })
       }
       if (this.url === '' || !this.ready) { this.splash() }
 
@@ -356,7 +385,7 @@ struct Index {
         TerminalView({
           runtime: this.runtime,
           stageLeft: this.termLeft,
-          stageTop: this.termTop + this.insetTop,
+          stageTop: this.termTop,
           stageWidth: this.termWidth,
           stageHeight: this.termHeight,
           visible: this.termVisible,
@@ -369,5 +398,12 @@ struct Index {
     .height('100%')
     .backgroundColor(this.bg)
     .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.KEYBOARD], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+    .parallelGesture(
+      PanGesture({ distance: 24, direction: PanDirection.Horizontal })
+        .onActionEnd((event: GestureEvent) => {
+          if (Math.abs(event.offsetX) < 60) { return; }
+          this.onWebSwipe(event.offsetX > 0 ? 'right' : 'left');
+        })
+    )
   }
 }
