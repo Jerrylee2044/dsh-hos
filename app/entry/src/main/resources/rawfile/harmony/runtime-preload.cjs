@@ -105,6 +105,17 @@ try {
           lines.push('DSH_ENV=' + key + '=' + value);
         }
       }
+      const sysroot = process.env.IEC_SYSROOT || process.env.DSH_SYSROOT || '';
+      const qemuRoot = sysroot ? path.join(sysroot, '..', 'qemu-root') : '';
+      const guestBash = sysroot ? path.join(sysroot, '..', 'qemu-tools', 'bash') : '';
+      const useQemu = qemuRoot && guestBash && fs.existsSync(qemuRoot) && fs.existsSync(guestBash);
+      if (useQemu) {
+        const cwdLine = lines[0];
+        const envLines = lines.slice(2);
+        lines.length = 0;
+        lines.push(cwdLine, 'qemu', '-L', qemuRoot, guestBash);
+        for (const envLine of envLines) { lines.push(envLine); }
+      }
       lines.push(tmp);
       lines.push('');
 
