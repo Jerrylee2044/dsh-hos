@@ -63,7 +63,9 @@ struct Index {
   aboutToAppear(): void {
     this.watchTheme();
     this.watchInsets();
-    this.start();
+    // Render the lightweight loading shell first. Runtime unpacking is synchronous
+    // on the host bridge, so starting it inside aboutToAppear delays the first frame.
+    setTimeout(() => { this.start(); }, 120);
   }
 
   aboutToDisappear(): void {
