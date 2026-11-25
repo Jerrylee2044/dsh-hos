@@ -12,7 +12,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORKDIR="${WORKDIR:-$ROOT/build}"
-BUNDLE_NAME="${BUNDLE_NAME:-com.example.dshhos}"
+BUNDLE_NAME="${BUNDLE_NAME:-com.dsh.hos}"
 APP_NAME="${APP_NAME:-DSH HOS}"
 BASE="${ASSET_BASE:-https://github.com/Jerrylee2044/dsh-hos/releases/download/v0.1.0-assets}"
 CACHE="$ROOT/.cache"

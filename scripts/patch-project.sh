@@ -4,7 +4,7 @@
 set -euo pipefail
 
 PROJECT="${1:?project dir}"
-BUNDLE="${2:-com.example.dshhos}"
+BUNDLE="${2:-com.dsh.hos}"
 APP_NAME="${3:-DSH HOS}"
 VERSION_NAME="${VERSION_NAME:-0.2.2-rc.5-dshhos.1}"
 VERSION_CODE="${VERSION_CODE:-8}"
