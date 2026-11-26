@@ -38,6 +38,7 @@ struct Index {
   @State private status: string = '正在启动本地运行时';
   @State private failed: string = '';
   @State private ready: boolean = false;
+  @State private settingsShown: boolean = false;
   @State private booting: boolean = false;
   @State private dark: boolean = false;
   @State private bg: string = LIGHT_BG;
@@ -222,13 +223,15 @@ struct Index {
       'return w};' +
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
       '(function(){' +
-      'var s=document.createElement("style");s.textContent="[class*=yHnPSG_root],[class*=yHnPSG_trigger]{display:none!important}";' +
-      '(document.head||document.documentElement).appendChild(s);' +
       'var labels=["打开配置文件","插件","插件管理","意见反馈","账号与余额","查询用量","充值","更多账号信息","实验性插件","开发者工具","Codex子智能","Claude Codex子智能"];' +
       'var last=0;function hide(){var now=Date.now();if(now-last<120)return;last=now;' +
       'var ns=document.querySelectorAll("button,a,[role=button]");for(var i=0;i<ns.length;i++){var el=ns[i];var t=((el.getAttribute("aria-label")||"")+" "+(el.textContent||"")).trim();' +
       'for(var j=0;j<labels.length;j++){if(t.indexOf(labels[j])>=0){el.style.setProperty("display","none","important");break;}}}}' +
-      'try{hide();new MutationObserver(function(){requestAnimationFrame(hide)}).observe(document.documentElement,{subtree:true,childList:true,characterData:true});}catch(x){}' +
+      'var openSettings=function(){try{console.log("DSH_SETTINGS_OPEN");}catch(x){}};' +
+      'var addSettingsEntry=function(){try{if(!document.body||document.getElementById("dsh-settings-entry"))return;var g=document.createElement("button");g.id="dsh-settings-entry";g.type="button";g.setAttribute("aria-label","设置");g.textContent="⚙ 设置";g.style.cssText="position:fixed;left:12px;bottom:84px;z-index:2147483647;height:34px;padding:0 12px;border:0;border-radius:17px;background:#2b3138;color:#fff;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.25)";g.onclick=function(e){e.preventDefault();e.stopPropagation();openSettings();};document.body.appendChild(g);}catch(x){}};' +
+      'try{addSettingsEntry();}catch(x){}' +
+      'document.addEventListener("click",function(e){try{var b=e.target&&e.target.closest?e.target.closest("button"):null;if(!b)return;var t=(b.getAttribute("aria-label")||"")+" "+(b.textContent||"");if(t.indexOf("账号菜单")>=0){e.preventDefault();e.stopPropagation();openSettings();}}catch(x){}},true);' +
+      'try{hide();new MutationObserver(function(){requestAnimationFrame(function(){hide();addSettingsEntry();})}).observe(document.documentElement,{subtree:true,childList:true,characterData:true});}catch(x){}' +
       '})();' +
       '(function(){var sx=0,sy=0,st=0,active=false;' +
       'document.addEventListener("touchstart",function(e){if(e.touches.length!==1){active=false;return;}var t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;},true);' +
@@ -347,6 +350,35 @@ struct Index {
     .backgroundColor(this.bg)
   }
 
+  @Builder
+  private settingsPanel() {
+    Column({ space: 14 }) {
+      Row() {
+        Text('设置').fontSize(22).fontWeight(FontWeight.Medium).fontColor(this.dark ? '#DCEDE0' : '#1F3D2E')
+        Blank()
+        Button('关闭').fontSize(13).backgroundColor(Color.Transparent).fontColor(this.dark ? '#9BE28F' : '#2E6B50')
+          .onClick(() => { this.settingsShown = false; })
+      }.width('100%')
+      Text('DSH HOS').fontSize(18).fontColor(this.dark ? '#DCEDE0' : '#1F3D2E')
+      Text('版本 0.2.3 (462)').fontSize(13).fontColor(this.dark ? '#8FA396' : '#6B8474')
+      Text('本地 AI 工作台 · 终端 · Alpine Linux · Agent 浏览器')
+        .fontSize(13).fontColor(this.dark ? '#8FA396' : '#6B8474').width('100%')
+      Button('项目仓库').width('100%').backgroundColor(this.dark ? '#24312B' : '#E8F1EA')
+        .fontColor(this.dark ? '#DCEDE0' : '#1F3D2E')
+        .onClick(() => { this.openExternal('https://github.com/Jerrylee2044/dsh-hos'); })
+      Button('隐私说明').width('100%').backgroundColor(this.dark ? '#24312B' : '#E8F1EA')
+        .fontColor(this.dark ? '#DCEDE0' : '#1F3D2E')
+        .onClick(() => { this.openExternal('https://github.com/Jerrylee2044/dsh-hos/blob/main/PRIVACY.md'); })
+      Text('非官方社区项目，与 DeepSeek、华为没有隶属或背书关系。')
+        .fontSize(12).fontColor(this.dark ? '#8FA396' : '#6B8474').width('100%')
+    }
+    .width('86%')
+    .padding(20)
+    .borderRadius(18)
+    .backgroundColor(this.dark ? '#18201C' : '#FFFFFF')
+    .shadow({ radius: 24, color: '#55000000', offsetY: 8 })
+  }
+
   build() {
     Stack({ alignContent: Alignment.Center }) {
       if (this.url !== '') {
@@ -371,6 +403,10 @@ struct Index {
               if (message.indexOf('DSH_OPEN:') === 0) {
                 hilog.info(0, 'DSH-WEB', 'open external %{public}s', message.slice(8));
                 this.openExternal(message.slice(8));
+                return true;
+              }
+              if (message.indexOf('DSH_SETTINGS_OPEN') === 0) {
+                this.settingsShown = true;
                 return true;
               }
               if (message.indexOf('DSH_SWIPE:') === 0) {
@@ -422,6 +458,7 @@ struct Index {
         .height('100%')
       }
       if (this.url === '' || !this.ready) { this.splash() }
+      if (this.settingsShown) { this.settingsPanel() }
 
       if (this.termShown && this.termWidth > 0 && this.termHeight > 0) {
         TerminalView({
