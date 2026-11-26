@@ -231,6 +231,10 @@ struct Index {
       'try{Object.defineProperty(w,"location",{get:function(){return w.location},set:function(v){report(v)}})}catch(e){};' +
       'return w};' +
       'var hideExperimental=function(){try{var s=document.createElement("style");s.textContent="[data-plugin-group=extensions],[data-plugin-group=more]{display:none!important}";(document.head||document.documentElement).appendChild(s);}catch(x){}};' +
+      'var rebrand=function(){try{document.title="青匣终端";}catch(x){}try{var b=document.querySelector("[class*=brandIdentity]");if(!b||b.getAttribute("data-dsh-rebrand"))return;b.setAttribute("data-dsh-rebrand","1");var svgs=b.querySelectorAll("svg");for(var i=0;i<svgs.length;i++)svgs[i].style.display="none";var n=document.createElement("span");n.textContent="青匣终端";n.style.cssText="font-size:18px;font-weight:600;letter-spacing:.5px;color:currentColor";b.appendChild(n);}catch(x){}};' +
+      'try{rebrand();}catch(x){}' +
+      'setTimeout(rebrand,800);setTimeout(rebrand,2000);' +
+      'try{new MutationObserver(function(){rebrand();}).observe(document.documentElement,{subtree:true,childList:true});}catch(x){}' +
       'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",hideExperimental);}else{hideExperimental();}' +
       'setTimeout(hideExperimental,300);' +
       'document.addEventListener("click",function(e){try{var b=e.target&&e.target.closest?e.target.closest("a,button"):null;if(!b)return;if((b.textContent||"").trim()==="打开配置文件"){e.preventDefault();e.stopPropagation();console.log("DSH_OPEN_CONFIG");}}catch(x){}},true);' +
@@ -397,8 +401,8 @@ struct Index {
   private splash() {
     Column({ space: 14 }) {
       Image($r('app.media.app_logo')).width(88).height(88).borderRadius(0)
-      Text('DSH HOS').fontSize(28).fontWeight(FontWeight.Medium).fontColor(this.dark ? '#DCEDE0' : '#1F3D2E')
-      Text('DeepSeek Harness · 鸿蒙原生').fontSize(13).fontColor(this.dark ? '#8FA396' : '#6B8474')
+      Text('青匣终端').fontSize(28).fontWeight(FontWeight.Medium).fontColor(this.dark ? '#DCEDE0' : '#1F3D2E')
+      Text('本地 AI 终端 · HarmonyOS').fontSize(13).fontColor(this.dark ? '#8FA396' : '#6B8474')
       Text(this.status).fontSize(14).fontColor(this.dark ? '#DCEDE0' : '#1F3D2E').margin({ top: 10 })
       if (this.failed === '') {
         LoadingProgress().width(34).height(34).color(this.dark ? '#9BE28F' : '#2E6B50')
