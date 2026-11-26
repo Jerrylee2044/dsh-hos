@@ -230,11 +230,11 @@ struct Index {
       'Object.defineProperty(w.location,"href",{get:function(){return u||""},set:function(v){report(v)}});' +
       'try{Object.defineProperty(w,"location",{get:function(){return w.location},set:function(v){report(v)}})}catch(e){};' +
       'return w};' +
-      'var hideExperimental=function(){try{var s=document.createElement("style");s.textContent="[data-plugin-group=extensions],[data-plugin-group=more]{display:none!important}";(document.head||document.documentElement).appendChild(s);}catch(x){}};' +
+      'var hideExperimental=function(){try{var s=document.createElement("style");s.textContent="[data-plugin-group=extensions],[data-plugin-group=more]{display:none!important}.hHd-Xa_brandIdentity>span>svg{display:none!important}";(document.head||document.documentElement).appendChild(s);}catch(x){}};' +
       'var rebrand=function(){try{document.title="青匣终端";}catch(x){}try{var b=document.querySelector("[class*=brandIdentity]");if(!b||b.getAttribute("data-dsh-rebrand"))return;b.setAttribute("data-dsh-rebrand","1");var svgs=b.querySelectorAll("svg");for(var i=0;i<svgs.length;i++)svgs[i].style.display="none";var n=document.createElement("span");n.textContent="青匣终端";n.style.cssText="font-size:18px;font-weight:600;letter-spacing:.5px;color:currentColor";b.appendChild(n);}catch(x){}};' +
-      'try{rebrand();}catch(x){}' +
-      'setTimeout(rebrand,800);setTimeout(rebrand,2000);' +
-      'try{new MutationObserver(function(){rebrand();}).observe(document.documentElement,{subtree:true,childList:true});}catch(x){}' +
+      'setTimeout(rebrand,1200);' +
+      'var rebrandTimer=setInterval(rebrand,1200);' +
+      'setTimeout(function(){clearInterval(rebrandTimer);},15000);' +
       'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",hideExperimental);}else{hideExperimental();}' +
       'setTimeout(hideExperimental,300);' +
       'document.addEventListener("click",function(e){try{var b=e.target&&e.target.closest?e.target.closest("a,button"):null;if(!b)return;if((b.textContent||"").trim()==="打开配置文件"){e.preventDefault();e.stopPropagation();console.log("DSH_OPEN_CONFIG");}}catch(x){}},true);' +
