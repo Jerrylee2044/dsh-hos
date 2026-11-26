@@ -129,7 +129,7 @@ struct Index {
         this.status = active ? '首次启动，正在解包运行时' : '正在启动本地运行时';
       });
       this.url = target;
-      this.status = '正在加载 DSH 界面';
+      this.status = '正在加载界面';
     } catch (error) {
       this.failed = (error as Error).message;
       this.status = '启动失败';
@@ -230,7 +230,7 @@ struct Index {
       'Object.defineProperty(w.location,"href",{get:function(){return u||""},set:function(v){report(v)}});' +
       'try{Object.defineProperty(w,"location",{get:function(){return w.location},set:function(v){report(v)}})}catch(e){};' +
       'return w};' +
-      'var hideExperimental=function(){try{var s=document.createElement("style");s.textContent=`[data-plugin-group=extensions],[data-plugin-group=more]{display:none!important}.hHd-Xa_brandIdentity>span,.pXSMma_fish{display:none!important}.hHd-Xa_brandIdentity:after{content:"青匣终端";font-size:18px;font-weight:600;letter-spacing:.5px;color:currentColor}`;(document.head||document.documentElement).appendChild(s);}catch(x){}};' +
+      'var hideExperimental=function(){try{var s=document.createElement("style");s.textContent=`[data-plugin-group=extensions],[data-plugin-group=more]{display:none!important}.hHd-Xa_brandIdentity>span,.pXSMma_fish{display:none!important}.hHd-Xa_brandIdentity:after{content:"青匣终端";font-size:18px;font-weight:600;letter-spacing:.5px;color:currentColor}.pXSMma_titleGroup>span:first-child{display:none!important}.pXSMma_titleGroup:before{content:"本地 AI 工作台";font-size:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit}`;(document.head||document.documentElement).appendChild(s);}catch(x){}};' +
       'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",hideExperimental);}else{hideExperimental();}' +
       'setTimeout(hideExperimental,300);' +
       'document.addEventListener("click",function(e){try{var b=e.target&&e.target.closest?e.target.closest("a,button"):null;if(!b)return;if((b.textContent||"").trim()==="打开配置文件"){e.preventDefault();e.stopPropagation();console.log("DSH_OPEN_CONFIG");}}catch(x){}},true);' +
