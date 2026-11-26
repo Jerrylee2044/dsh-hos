@@ -71,9 +71,6 @@ struct Index {
   private touchStartX: number = 0;
   private touchStartY: number = 0;
   private touchStartAt: number = 0;
-  private shellSwipeX: number = 0;
-  private shellSwipeY: number = 0;
-  private shellSwipeAt: number = 0;
 
   aboutToAppear(): void {
     this.watchTheme();
@@ -251,26 +248,9 @@ struct Index {
       'if(href){if(window.dshHost&&window.dshHost.openUrl){try{window.dshHost.openUrl(href);}catch(x){console.log("DSH_OPEN:"+href);}}else{console.log("DSH_OPEN:"+href);}}' +
       '}}catch(x){}},true);' +
       '(function(){var sx=0,sy=0,st=0,active=false;' +
+      'document.addEventListener("selectstart",function(e){if(active)e.preventDefault();},true);' +
       'document.addEventListener("touchstart",function(e){if(e.touches.length!==1){active=false;return;}var t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;},true);' +
       'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}if(document.body.innerText.indexOf("打开配置文件")>=0&&sy<window.innerHeight*0.2){return;}try{console.log("DSH_SWIPE:"+(dx>0?"left":"right"));}catch(x){}},true);})();'
-  }
-
-  private onShellTouch(event: TouchEvent): void {
-    if (event.type === TouchType.Down) {
-      if (event.touches.length !== 1) { return; }
-      this.shellSwipeX = event.touches[0].x;
-      this.shellSwipeY = event.touches[0].y;
-      this.shellSwipeAt = Date.now();
-      return;
-    }
-    if (event.type !== TouchType.Up) { return; }
-    const t = event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0] : undefined;
-    if (t === undefined) { return; }
-    const dx = t.x - this.shellSwipeX;
-    const dy = t.y - this.shellSwipeY;
-    if (Date.now() - this.shellSwipeAt > 700) { return; }
-    if (Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy) * 1.6) { return; }
-    this.onWebSwipe(dx > 0 ? 'left' : 'right');
   }
 
   private onWebSwipe(direction: string): void {
@@ -451,7 +431,6 @@ struct Index {
             .width('100%')
             .height('100%')
             .backgroundColor(this.bg)
-            .onTouch((event: TouchEvent) => { this.onShellTouch(event); })
             .javaScriptOnDocumentStart([{ script: this.bridgeScript(), scriptRules: [this.localOrigin() === '' ? '*' : this.localOrigin()] }])
             .onConsole((event: OnConsoleEvent) => {
               const message = event.message.getMessage();
@@ -528,8 +507,6 @@ struct Index {
           onClose: () => { this.termShown = false; this.termVisible = false; this.termOwner = ''; }
         })
       }
-
-
 
     }
     .width('100%')
