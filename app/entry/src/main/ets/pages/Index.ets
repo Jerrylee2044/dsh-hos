@@ -2,6 +2,7 @@ import { common, Want } from '@kit.AbilityKit';
 import { webview } from '@kit.ArkWeb';
 import { window, mediaquery } from '@kit.ArkUI';
 import { util, url } from '@kit.ArkTS';
+import { fileIo as fs } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { NativeRuntime } from '../platform/NativeRuntime';
 import { TerminalView } from './Terminal';
@@ -44,6 +45,9 @@ struct Index {
   @State private status: string = '正在启动本地运行时';
   @State private failed: string = '';
   @State private ready: boolean = false;
+  @State private configShown: boolean = false;
+  @State private configText: string = '';
+  @State private configError: string = '';
   @State private booting: boolean = false;
   @State private dark: boolean = false;
   @State private bg: string = LIGHT_BG;
@@ -226,6 +230,7 @@ struct Index {
       'Object.defineProperty(w.location,"href",{get:function(){return u||""},set:function(v){report(v)}});' +
       'try{Object.defineProperty(w,"location",{get:function(){return w.location},set:function(v){report(v)}})}catch(e){};' +
       'return w};' +
+      'document.addEventListener("click",function(e){try{var b=e.target&&e.target.closest?e.target.closest("a,button"):null;if(!b)return;if((b.textContent||"").trim()==="打开配置文件"){e.preventDefault();e.stopPropagation();console.log("DSH_OPEN_CONFIG");}}catch(x){}},true);' +
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
       'document.addEventListener("click",function(e){try{' +
       'var el=e.target&&e.target.closest?e.target.closest("a,button"):null;if(!el)return;' +
@@ -335,6 +340,55 @@ struct Index {
     return true;
   }
 
+  private openConfigFile(): void {
+    this.configError = '';
+    this.configText = '';
+    const base = (this.getUIContext().getHostContext() as common.UIAbilityContext).filesDir;
+    const candidates: string[] = [
+      base + '/harness-home/profiles/web/cordis.patch.yml',
+      base + '/harness-home/profiles/web/cordis.patch.yaml',
+      base + '/harness-home/settings.yaml',
+      base + '/harness-home/config.yaml'
+    ];
+    for (const path of candidates) {
+      try {
+        if (fs.accessSync(path)) {
+          this.configText = fs.readTextSync(path);
+          this.configShown = true;
+          return;
+        }
+      } catch (error) { /* 尝试下一个 */ }
+    }
+    this.configError = '未找到 settings.yaml';
+    this.configShown = true;
+  }
+
+  @Builder
+  private configPanel() {
+    Column() {
+      Column({ space: 12 }) {
+        Row() {
+          Text('配置文件').fontSize(20).fontWeight(FontWeight.Medium).fontColor(this.dark ? '#DCEDE0' : '#1F3D2E')
+          Blank()
+          Button('关闭').fontSize(13).backgroundColor(Color.Transparent).fontColor(this.dark ? '#9BE28F' : '#2E6B50')
+            .onClick(() => { this.configShown = false; })
+        }.width('100%')
+        Text(this.configError !== '' ? this.configError : '应用配置（Profile Patch）')
+          .fontSize(11).fontColor(this.dark ? '#8FA396' : '#6B8474').width('100%')
+        Scroll() {
+          Text(this.configText !== '' ? this.configText : this.configError)
+            .fontSize(12).fontColor(this.dark ? '#D8DEE9' : '#1F2A24')
+            .copyOption(CopyOptions.LocalDevice).width('100%')
+        }.width('100%').layoutWeight(1).scrollBar(BarState.Auto)
+      }
+      .width('92%').height('76%').padding(18).borderRadius(16)
+      .backgroundColor(this.dark ? '#18201C' : '#FFFFFF')
+      .shadow({ radius: 24, color: '#55000000', offsetY: 8 })
+    }
+    .width('100%').height('100%').justifyContent(FlexAlign.Center)
+    .backgroundColor('#66000000')
+  }
+
   @Builder
   private splash() {
     Column({ space: 14 }) {
@@ -380,6 +434,10 @@ struct Index {
               if (message.indexOf('DSH_OPEN:') === 0) {
                 hilog.info(0, 'DSH-WEB', 'open external %{public}s', message.slice(8));
                 this.openExternal(message.slice(8));
+                return true;
+              }
+              if (message.indexOf('DSH_OPEN_CONFIG') === 0) {
+                this.openConfigFile();
                 return true;
               }
               if (message.indexOf('DSH_SWIPE:') === 0) {
@@ -431,6 +489,7 @@ struct Index {
         .height('100%')
       }
       if (this.url === '' || !this.ready) { this.splash() }
+      if (this.configShown) { this.configPanel() }
 
       if (this.termShown && this.termWidth > 0 && this.termHeight > 0) {
         TerminalView({
