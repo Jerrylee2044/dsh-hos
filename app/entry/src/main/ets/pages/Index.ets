@@ -221,6 +221,15 @@ struct Index {
       'try{Object.defineProperty(w,"location",{get:function(){return w.location},set:function(v){report(v)}})}catch(e){};' +
       'return w};' +
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
+      '(function(){' +
+      'var s=document.createElement("style");s.textContent="[class*=yHnPSG_root],[class*=yHnPSG_trigger]{display:none!important}";' +
+      '(document.head||document.documentElement).appendChild(s);' +
+      'var labels=["打开配置文件","插件","插件管理","意见反馈","账号与余额","查询用量","充值","更多账号信息","实验性插件","开发者工具","Codex子智能","Claude Codex子智能"];' +
+      'var last=0;function hide(){var now=Date.now();if(now-last<120)return;last=now;' +
+      'var ns=document.querySelectorAll("button,a,[role=button]");for(var i=0;i<ns.length;i++){var el=ns[i];var t=((el.getAttribute("aria-label")||"")+" "+(el.textContent||"")).trim();' +
+      'for(var j=0;j<labels.length;j++){if(t.indexOf(labels[j])>=0){el.style.setProperty("display","none","important");break;}}}}' +
+      'try{hide();new MutationObserver(function(){requestAnimationFrame(hide)}).observe(document.documentElement,{subtree:true,childList:true,characterData:true});}catch(x){}' +
+      '})();' +
       '(function(){var sx=0,sy=0,st=0,active=false;' +
       'document.addEventListener("touchstart",function(e){if(e.touches.length!==1){active=false;return;}var t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;},true);' +
       'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}if(document.body.innerText.indexOf("打开配置文件")>=0&&sy<window.innerHeight*0.2){return;}try{console.log("DSH_SWIPE:"+(dx>0?"left":"right"));}catch(x){}},true);})();'
@@ -241,7 +250,8 @@ struct Index {
       '  const body = document.body.innerText || "";' +
       '  const click = k => { const n = pick(k); if (n) { n.click(); return true; } return false; };' +
       // 设置页
-      '  if (pick("打开配置文件")) {' +
+      '  const hasSettings = Array.from(document.querySelectorAll("button,[role=button]")).some(n => label(n).indexOf("打开配置文件") >= 0);' +
+      '  if (hasSettings) {' +
       '    if (click("关闭")) return "close-settings";' +
       '    return "settings-no-close";' +
       '  }' +
