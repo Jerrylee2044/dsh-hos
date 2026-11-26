@@ -230,6 +230,9 @@ struct Index {
       'Object.defineProperty(w.location,"href",{get:function(){return u||""},set:function(v){report(v)}});' +
       'try{Object.defineProperty(w,"location",{get:function(){return w.location},set:function(v){report(v)}})}catch(e){};' +
       'return w};' +
+      'var hideExperimental=function(){try{var s=document.createElement("style");s.textContent="[data-plugin-group=extensions],[data-plugin-group=more]{display:none!important}";(document.head||document.documentElement).appendChild(s);}catch(x){}};' +
+      'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",hideExperimental);}else{hideExperimental();}' +
+      'setTimeout(hideExperimental,300);' +
       'document.addEventListener("click",function(e){try{var b=e.target&&e.target.closest?e.target.closest("a,button"):null;if(!b)return;if((b.textContent||"").trim()==="打开配置文件"){e.preventDefault();e.stopPropagation();console.log("DSH_OPEN_CONFIG");}}catch(x){}},true);' +
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
       'document.addEventListener("click",function(e){try{' +

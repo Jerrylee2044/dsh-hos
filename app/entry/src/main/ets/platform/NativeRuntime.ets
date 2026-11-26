@@ -152,8 +152,8 @@ export class NativeRuntime {
     this.ensureDir(this.root + '/bin');
     this.ensureDir(this.root + '/engine');
     await this.unpackRaw('tools/official-engine.tar.gz', this.root + '/engine');
-    this.copyRawfile('tools/require-builtin-shim.js', this.root + '/engine/node_modules/node-addon-require-builtin/lib/index.js');
-    this.copyRawfile('tools/flock-shim.js', this.root + '/engine/node_modules/@deepseek-ai/node-addon-system/lib/flock.js');
+    this.copyRawfile('tools/require-builtin-shim.txt', this.root + '/engine/node_modules/node-addon-require-builtin/lib/index.js');
+    this.copyRawfile('tools/flock-shim.txt', this.root + '/engine/node_modules/@deepseek-ai/node-addon-system/lib/flock.js');
     await this.unpackRaw('tools/npm.tar.gz', this.root);
     await this.unpackRaw('tools/python-stdlib.tar', this.root);
     this.ensureDir(this.root + '/vim');
@@ -259,7 +259,7 @@ export class NativeRuntime {
       this.copyRawfile('harmony/' + name, this.root + '/harmony/' + name);
     }
     this.ensureDir(this.root + '/certs');
-    this.copyRawfile('harmony/cacert.pem', this.root + '/certs/cacert.pem');
+    this.copyRawfile('harmony/cacert.txt', this.root + '/certs/cacert.pem');
   }
 
   private installPlugin(name: string, rawDir: string): void {
@@ -271,11 +271,12 @@ export class NativeRuntime {
     this.ensureDir(dest + '/lib');
     hilog.info(0, 'DSH-RT', 'plugin dir ok');
     const files = name.indexOf('terminal') >= 0
-      ? ['package.json', 'index.js', 'client.js', 'cordis.patch.yml']
-      : ['package.json', 'lib/index.js', 'lib/client.js', 'cordis.patch.yml'];
+      ? ['package.json', 'index.txt', 'client.txt', 'cordis.patch.yml']
+      : ['package.json', 'lib/index.txt', 'lib/client.txt', 'cordis.patch.yml'];
     for (const file of files) {
       hilog.info(0, 'DSH-RT', 'plugin file %{public}s', file);
-      this.copyRawfile(rawDir + '/' + file, dest + '/' + file);
+      const target = file.replace(/\.txt$/, '.js');
+      this.copyRawfile(rawDir + '/' + file, dest + '/' + target);
     }
     hilog.info(0, 'DSH-RT', 'plugin copied');
     hilog.info(0, 'DSH-RT', 'plugin patch');
@@ -406,11 +407,11 @@ export class NativeRuntime {
       await this.installEngine();
     }
     try {
-      this.copyRawfile('tools/require-builtin-shim.js', this.root + '/engine/node_modules/node-addon-require-builtin/lib/index.js');
-      this.copyRawfile('tools/flock-shim.js', this.root + '/engine/node_modules/@deepseek-ai/node-addon-system/lib/flock.js');
-      this.copyRawfile('tools/settings-general-about.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-settings-general/lib/client.js');
-      this.copyRawfile('tools/subprocess-local-patched.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-subprocess-local/lib/index.js');
-      this.copyRawfile('tools/sidebar-terminal-no-guide.js', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-sidebar-terminal/lib/client.js');
+      this.copyRawfile('tools/require-builtin-shim.txt', this.root + '/engine/node_modules/node-addon-require-builtin/lib/index.js');
+      this.copyRawfile('tools/flock-shim.txt', this.root + '/engine/node_modules/@deepseek-ai/node-addon-system/lib/flock.js');
+      this.copyRawfile('tools/settings-general-about.txt', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-settings-general/lib/client.js');
+      this.copyRawfile('tools/subprocess-local-patched.txt', this.root + '/engine/node_modules/@deepseek-ai/dsh-subprocess-local/lib/index.js');
+      this.copyRawfile('tools/sidebar-terminal-no-guide.txt', this.root + '/engine/node_modules/@deepseek-ai/dsh-client-ui-sidebar-terminal/lib/client.js');
       this.ensureDir(this.root + '/tools');
       this.copyRawfile('tools/apk-install.mjs', this.root + '/tools/apk-install.mjs');
       this.copyRawfile('tools/browser.mjs', this.root + '/tools/browser.mjs');
