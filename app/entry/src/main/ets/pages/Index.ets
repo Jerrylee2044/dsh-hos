@@ -31,6 +31,12 @@ interface BridgeMessage {
  *  3. 接收终端插件通过 console 上报的 tab 几何；
  *  4. 把站外链接交给系统浏览器。
  */
+class ExternalBridge {
+  private open: (url: string) => void;
+  constructor(open: (url: string) => void) { this.open = open; }
+  openUrl(url: string): void { this.open(url); }
+}
+
 @Entry
 @Component
 struct Index {
@@ -51,7 +57,9 @@ struct Index {
   @State private termHeight: number = 0;
   @State private termCwd: string = '';
   private runtime?: NativeRuntime;
+  private externalBridge: ExternalBridge = new ExternalBridge((url: string): void => { this.openExternal(url); });
   private controller: webview.WebviewController = new webview.WebviewController();
+  private externalProxy: JavaScriptProxy = { object: this.externalBridge, name: 'dshHost', methodList: ['openUrl'], controller: this.controller };
   private nonce: string = util.generateRandomUUID(true);
   private termOwner: string = '';
   private themeListener?: mediaquery.MediaQueryListener;
@@ -219,6 +227,18 @@ struct Index {
       'try{Object.defineProperty(w,"location",{get:function(){return w.location},set:function(v){report(v)}})}catch(e){};' +
       'return w};' +
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
+      'document.addEventListener("click",function(e){try{' +
+      'var el=e.target&&e.target.closest?e.target.closest("a,button"):null;if(!el)return;' +
+      'var t=(el.textContent||"").trim();' +
+      'if(t==="更多账号信息"||t==="查询用量"||t==="充值"||t==="意见反馈"){' +
+      'e.preventDefault();e.stopPropagation();' +
+      'var href=el.href||"";' +
+      'if(!href&&t==="更多账号信息")href="https://platform.deepseek.com/";' +
+      'if(!href&&t==="查询用量")href="https://platform.deepseek.com/usage";' +
+      'if(!href&&t==="充值")href="https://platform.deepseek.com/top_up";' +
+      'if(!href&&t==="意见反馈")href="https://github.com/Jerrylee2044/dsh-hos/issues";' +
+      'if(href){if(window.dshHost&&window.dshHost.openUrl){try{window.dshHost.openUrl(href);}catch(x){console.log("DSH_OPEN:"+href);}}else{console.log("DSH_OPEN:"+href);}}' +
+      '}}catch(x){}},true);' +
       '(function(){var sx=0,sy=0,st=0,active=false;' +
       'document.addEventListener("touchstart",function(e){if(e.touches.length!==1){active=false;return;}var t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();active=true;},true);' +
       'document.addEventListener("touchend",function(e){if(!active){return;}active=false;var t=e.changedTouches&&e.changedTouches[0];if(!t){return;}var dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st>700){return;}if(Math.abs(dx)<80||Math.abs(dx)<Math.abs(dy)*1.6){return;}if(document.body.innerText.indexOf("打开配置文件")>=0&&sy<window.innerHeight*0.2){return;}try{console.log("DSH_SWIPE:"+(dx>0?"left":"right"));}catch(x){}},true);})();'
@@ -341,6 +361,7 @@ struct Index {
         Column() {
           Web({ src: this.url, controller: this.controller })
             .javaScriptAccess(true)
+            .javaScriptProxy(this.externalProxy)
             .domStorageAccess(true)
             .databaseAccess(false)
             .fileAccess(false)
