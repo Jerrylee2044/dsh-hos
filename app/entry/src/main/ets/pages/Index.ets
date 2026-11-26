@@ -233,6 +233,17 @@ struct Index {
       'var hideExperimental=function(){try{var s=document.createElement("style");s.textContent=`[data-plugin-group=extensions],[data-plugin-group=more]{display:none!important}.hHd-Xa_brandIdentity>span,.pXSMma_fish{display:none!important}.hHd-Xa_brandIdentity:after{content:"青匣终端";font-size:18px;font-weight:600;letter-spacing:.5px;color:currentColor}.pXSMma_titleGroup>span:first-child{display:none!important}.pXSMma_titleGroup:before{content:"青匣工作台";font-size:inherit;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit}`;(document.head||document.documentElement).appendChild(s);}catch(x){}};' +
       'if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",hideExperimental);}else{hideExperimental();}' +
       'setTimeout(hideExperimental,300);' +
+      'var allowedProviders=["deepseek","kimi-coding","moonshotai-cn","minimax-cn","qwen-token-plan-cn"];' +
+      'var filterProviders=function(){try{' +
+      'document.querySelectorAll("select").forEach(function(sel){var opts=Array.prototype.slice.call(sel.options);if(!opts.some(function(o){return o.value==="openai";}))return;' +
+      'opts.forEach(function(o){if(allowedProviders.indexOf(o.value)<0)o.remove();});' +
+      'if(allowedProviders.indexOf(sel.value)<0&&allowedProviders.length>0){sel.value=allowedProviders[0];sel.dispatchEvent(new Event("change",{bubbles:true}));}' +
+      '});' +
+      'document.querySelectorAll("button,[role=tab]").forEach(function(b){var t=(b.textContent||"").trim();if(t==="自定义模型 API"||t==="自定义供应商"||t==="自定义模型提供商"){b.style.display="none";}});' +
+      'document.querySelectorAll("p,div,span").forEach(function(e){var t=(e.textContent||"");if(t.indexOf("OpenAI")>=0&&t.indexOf("Anthropic")>=0&&e.children.length<3){e.style.display="none";}});' +
+      '}catch(x){}};' +
+      'setTimeout(filterProviders,800);setTimeout(filterProviders,2000);setTimeout(filterProviders,5000);' +
+      'document.addEventListener("click",function(){setTimeout(filterProviders,300);setTimeout(filterProviders,1200);},true);' +
       'document.addEventListener("click",function(e){try{var b=e.target&&e.target.closest?e.target.closest("a,button"):null;if(!b)return;if((b.textContent||"").trim()==="打开配置文件"){e.preventDefault();e.stopPropagation();console.log("DSH_OPEN_CONFIG");}}catch(x){}},true);' +
       'document.addEventListener("click",function(e){try{var a=e.target&&e.target.closest?e.target.closest("a"):null;if(a&&a.target==="_blank"&&a.href){console.log("DSH_OPEN:"+a.href);e.preventDefault();}}catch(x){}},true);' +
       'document.addEventListener("click",function(e){try{' +
